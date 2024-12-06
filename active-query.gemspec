@@ -4,7 +4,7 @@ require_relative "lib/active_query/version"
 
 Gem::Specification.new do |spec|
   spec.name = "active-query"
-  spec.version = Active::Query::VERSION
+  spec.version = ActiveQuery::VERSION
   spec.authors = ["Matias Asis"]
   spec.email = ["matiasis.90@gmail.com"]
 
