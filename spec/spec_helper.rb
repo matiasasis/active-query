@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "active/query"
+require "active_query"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "lib/active/query/version"
+require_relative "lib/active_query/version"
 
 Gem::Specification.new do |spec|
   spec.name = "active-query"
