@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
-require_relative 'query/version'
+require 'active_record'
+require 'active_support'
+require 'active_support/concern'
 
 module ActiveQuery
   module Base
-    extend ActiveSupport::Concern
+    extend ::ActiveSupport::Concern
 
     class Boolean; end
 
@@ -14,13 +16,17 @@ module ActiveQuery
     end
 
     class_methods do
-       def model_name(model_name)
+      def model_name(model_name)
         classified_model_name = model_name.classify
         model = classified_model_name.safe_constantize
         raise NameError, "Model #{classified_model_name} not found" unless model
         raise ArgumentError, 'Model should be an ActiveRecord::Base' unless model.ancestors.include?(ActiveRecord::Base)
 
         @__model = model
+      end
+
+      def model
+        @__model
       end
 
       def scope
@@ -62,7 +68,12 @@ module ActiveQuery
 
       def infer_model
         model_class_name = self.name.sub(/::Query$/, '').classify
-        model_name(model_class_name) if const_defined?(model_class_name)
+        return unless const_defined?(model_class_name)
+
+        model = model_class_name.safe_constantize
+        return unless model.ancestors.include?(ActiveRecord::Base)
+
+        model_name(model_class_name)
       end
 
       def query_with_arguments(name, description, args_def, lambda)
