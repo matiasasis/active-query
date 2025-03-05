@@ -7,13 +7,11 @@ class DummyModelQueryObjectModelName
   model_name 'DummyModel'
 end
 
-module DummyModels
-  class Query
-    include ::ActiveQuery::Base
-  end
+class DummyModelQueryObjectNoModelName
+  include ::ActiveQuery::Base
 end
 
-RSpec.describe ActiveQuery do
+RSpec.describe 'Model Name' do
   describe '.model_name' do
     context 'when model_name is given' do
       subject { DummyModelQueryObjectModelName.model }

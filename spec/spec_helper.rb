@@ -9,6 +9,9 @@ ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:"
 
 load "#{File.dirname(__FILE__)}/support/schema.rb"
 require "#{File.dirname(__FILE__)}/support/models.rb"
+require "#{File.dirname(__FILE__)}/support/queries/dummy_models/resolvers/count.rb"
+require "#{File.dirname(__FILE__)}/support/queries/dummy_models/resolvers/by_name.rb"
+require "#{File.dirname(__FILE__)}/support/queries/dummy_models/query.rb"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -22,13 +25,16 @@ RSpec.configure do |config|
   end
 
   config.before(:suite) do
-    DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  config.around(:each) do |example|
-    DatabaseCleaner.cleaning do
-      example.run
-    end
+  config.before do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.start
+  end
+
+  config.after(:suite) do
+    puts 'Cleaning database...'
+    DatabaseCleaner.clean
   end
 end

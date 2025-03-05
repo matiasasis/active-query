@@ -3,6 +3,8 @@
 require 'active_record'
 require 'active_support'
 require 'active_support/concern'
+require_relative 'active_query/resolver'
+require_relative 'active_record_relation_extensions'
 
 module ActiveQuery
   module Base
@@ -93,7 +95,7 @@ module ActiveQuery
       def query_with_resolver(name, description, args_def, **kwargs)
         register_query(name, description, args_def)
         resolver = kwargs[:resolver]
-        raise 'Invalid Resolver, must inherit from QOR::Resolvers::Base' unless resolver.ancestors.include?(QOR::Resolvers::Base)
+        raise 'Invalid Resolver, must inherit from ActiveQuery::Resolvers::Base' unless resolver.ancestors.include?(ActiveQuery::Resolver)
 
         define_singleton_method(name) do |given_args|
           given_args = validate_args(name, given_args, args_def)
@@ -102,9 +104,10 @@ module ActiveQuery
       end
 
       def query_with_resolver_without_out_args(name, description, **kwargs)
-        # register_query(name, description, args_def)
+        register_query(name, description)
         resolver = kwargs[:resolver]
-        raise 'Invalid Resolver, must inherit from QOR::Resolvers::Base' unless resolver.ancestors.include?(QOR::Resolvers::Base)
+        raise 'Invalid Resolver, must inherit from ActiveQuery::Resolvers::Base' unless resolver.ancestors.include?(ActiveQuery::Resolver)
+
         define_singleton_method(name) { resolver.new(scope).resolve }
       end
 
@@ -114,7 +117,7 @@ module ActiveQuery
         raise ArgumentError, "Optional and Default params can't be present together: #{optional_and_default.keys}" if optional_and_default.present?
 
         # Will add all queries for further serving the method 'queries'
-        @__queries << { name:, description:, args_def: }
+        @__queries << { name:, description:, args_def: }.compact_blank
       end
 
       def validate_args(name, given_args, args_def)
@@ -139,7 +142,7 @@ module ActiveQuery
           given_arg_name = given_arg.first
           given_arg_value = given_arg.second
 
-          if given_arg_type == QOR::Base::Boolean
+          if given_arg_type == ActiveQuery::Base::Boolean
             unless given_arg_value == true || given_arg_value == false
               raise ArgumentError, ":#{given_arg_name} must be of type Boolean"
             end

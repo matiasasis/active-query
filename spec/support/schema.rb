@@ -5,6 +5,8 @@ ActiveRecord::Schema.define do
 
   create_table :dummy_models, force: true do |t|
     t.string :name
+    t.boolean :active
+    t.integer :number
 
     t.timestamps
   end
