@@ -3,11 +3,9 @@
 require 'spec_helper'
 
 RSpec.describe 'Arguments' do
-  before(:all) do
-    DummyModel.create!(name: 'Dummy1', active: false, number: 1)
-    DummyModel.create!(name: 'Dummy2', active: true, number: 1)
-    DummyModel.create!(name: 'Dummy3', active: true, number: 2)
-  end
+  let!(:dummy1) { DummyModel.create!(name: 'Dummy1', active: false, number: 1) }
+  let!(:dummy2) { DummyModel.create!(name: 'Dummy2', active: true, number: 1) }
+  let!(:dummy3) { DummyModel.create!(name: 'Dummy3', active: true, number: 2) }
 
   describe '.query' do
     context 'when defining argument as required and default' do
@@ -50,7 +48,7 @@ RSpec.describe 'Arguments' do
       subject { DummyModels::Query.all_args(active: false, name: 'Dummy1', number: 1) }
 
       it 'returns the dummy model that matches criteria' do
-        expect(subject).to include(DummyModel.find_by(name: 'Dummy1'))
+        expect(subject).to include(dummy1)
       end
     end
 
@@ -58,12 +56,12 @@ RSpec.describe 'Arguments' do
       subject { DummyModels::Query.example_with_default(number: 1) }
 
       it 'returns Dummy2 because defaults active to false' do
-        expect(subject).to include(DummyModel.find_by(name: 'Dummy2'))
+        expect(subject).to include(dummy2)
       end
 
       context "when you don't pass an argument that has optional == true" do
         it 'returns Dummy2, query still executes because name was optional' do
-          expect(subject).to include(DummyModel.find_by(name: 'Dummy2'))
+          expect(subject).to include(dummy2)
         end
       end
     end

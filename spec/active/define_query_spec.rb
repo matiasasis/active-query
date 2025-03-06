@@ -3,10 +3,8 @@
 require 'spec_helper'
 
 RSpec.describe 'Define Query' do
-  before(:all) do
-    DummyModel.create!(name: 'Dummy1')
-    DummyModel.create!(name: 'Dummy2')
-  end
+  let!(:dummy1) { DummyModel.create!(name: 'Dummy1', active: false, number: 1) }
+  let!(:dummy2) { DummyModel.create!(name: 'Dummy2', active: true, number: 1) }
 
   describe '.query' do
     context 'when query is a lambda' do
@@ -23,7 +21,7 @@ RSpec.describe 'Define Query' do
 
         it 'returns the dummy model that exactly matches the name' do
           expect(subject.size).to eq(1)
-          expect(subject).to include(DummyModel.find_by(name: 'Dummy2'))
+          expect(subject).to include(dummy2)
         end
 
         context 'when invalid arg type is given' do
@@ -50,7 +48,7 @@ RSpec.describe 'Define Query' do
 
         it 'returns the dummy model that exactly matches the name' do
           expect(subject.size).to eq(1)
-          expect(subject).to include(DummyModel.find_by(name: 'Dummy2'))
+          expect(subject).to include(dummy2)
         end
 
         context 'when invalid arg type is given' do
