@@ -54,5 +54,19 @@ module DummyModels
           .where(number:)
           .unless(active, -> { where(active: true) })
       }
+
+    query :greater_than, 'Returns all with number > 1', -> { scope.gt(:number, 1) }
+
+    query :greater_than_or_equals, 'Returns all with number >= 1', -> { scope.gteq(:number, 1) }
+
+    query :less_than, 'Returns all with number < 2', -> { scope.lt(:number, 2) }
+
+    query :less_than_or_equals, 'Returns all with number <= 2', -> { scope.lteq(:number, 2) }
+
+    query :like_name, 'Returns with name like Dummy', -> { scope.like(:name, 'Dummy') }
+
+    query :start_like_name, 'Returns with name that start like Dummy', -> { scope.start_like(:name, 'Dummy') }
+
+    query :end_like_name, 'Returns with name that end like 1', -> { scope.end_like(:name, '1') }
   end
 end

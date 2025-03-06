@@ -165,6 +165,8 @@ module ActiveQuery
       def lt(col, val) = __operation(:lt, col, val)
       def lteq(col, val) = __operation(:lteq, col, val)
       def like(col, val) = __operation(:matches, col, "%#{val}%")
+      def start_like(col, val) = __operation(:matches, col, "#{val}%")
+      def end_like(col, val) = __operation(:matches, col, "%#{val}")
       def __operation(op, col, val) = where(arel_table[col].send(op, val))
     end
   end
