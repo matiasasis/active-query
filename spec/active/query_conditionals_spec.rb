@@ -3,11 +3,11 @@
 require 'spec_helper'
 
 RSpec.describe 'Arguments' do
-  describe '.query' do
-    let!(:dummy1) { DummyModel.create!(name: 'Dummy1', active: false, number: 1) }
-    let!(:dummy2) { DummyModel.create!(name: 'Dummy2', active: true, number: 1) }
-    let!(:dummy3) { DummyModel.create!(name: 'Dummy3', active: true, number: 2) }
+  let!(:dummy1) { DummyModel.create!(name: 'Dummy1', active: false, number: 1) }
+  let!(:dummy2) { DummyModel.create!(name: 'Dummy2', active: true, number: 1) }
+  let!(:dummy3) { DummyModel.create!(name: 'Dummy3', active: true, number: 2) }
 
+  describe '.query' do
     context '.if' do
       context 'when active is provided' do
         subject { DummyModels::Query.number_if_active(number: 1, active: true) }
