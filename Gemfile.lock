@@ -2,8 +2,8 @@ PATH
   remote: .
   specs:
     active-query (0.0.1)
-      activerecord (>= 6.1)
-      activesupport (>= 6.1)
+      activerecord (>= 6.1, < 8.0)
+      activesupport (>= 6.1, < 8.0)
 
 GEM
   remote: https://rubygems.org/
@@ -78,7 +78,7 @@ PLATFORMS
 
 DEPENDENCIES
   active-query!
-  byebug
+  byebug (~> 11.0)
   database_cleaner-active_record (~> 2.2.0)
   rake (~> 13.0)
   rspec (~> 3.9.0)

@@ -3,6 +3,7 @@
 require 'active_record'
 require 'active_support'
 require 'active_support/concern'
+require_relative 'active_query/version'
 require_relative 'active_query/resolver'
 require_relative 'active_record_relation_extensions'
 
