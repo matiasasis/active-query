@@ -47,6 +47,8 @@ module ActiveQuery
       end
 
       def query(name, description, args_def_or_lambda = nil, lambda = nil, **kwargs)
+        raise ArgumentError, 'name must be present' unless name.present?
+
         if args_def_or_lambda.is_a?(Hash)
           if kwargs[:resolver].present?
             query_with_resolver(name, description, args_def_or_lambda, **kwargs)

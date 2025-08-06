@@ -60,5 +60,31 @@ RSpec.describe 'Define Query' do
         end
       end
     end
+
+    context 'when query is invalid' do
+      context 'when no arguments given' do
+        subject { DummyModels::Query.query() }
+
+        it 'returns the amount of dummy models' do
+          expect { subject }.to raise_error(ArgumentError, 'wrong number of arguments (given 0, expected 2..4)')
+        end
+      end
+
+      context 'when resolver is not provided' do
+        subject { DummyModels::Query.query(:fake, 'fake description') }
+
+        it 'returns the amount of dummy models' do
+          expect { subject }.to raise_error(ArgumentError, 'Invalid query definition')
+        end
+      end
+
+      context 'when empty name' do
+        subject { DummyModels::Query.query('', 'fake description', -> { where(number: 2) }) }
+
+        it 'returns the amount of dummy models' do
+          expect { subject }.to raise_error(ArgumentError, 'name must be present')
+        end
+      end
+    end
   end
 end

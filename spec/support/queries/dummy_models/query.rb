@@ -68,5 +68,18 @@ module DummyModels
     query :start_like_name, 'Returns with name that start like Dummy', -> { scope.start_like(:name, 'Dummy') }
 
     query :end_like_name, 'Returns with name that end like 1', -> { scope.end_like(:name, '1') }
+
+    query :by_number, 'Returns with number matching argument',
+      { number: { type: Integer } }, -> (number:) { scope.where(number:) }
+
+    query :count_with_scope, 'Returns the count of the scope', -> { scope.count_scope }
+
+    module Scopes
+      include ::ActiveQuery::Scopes
+
+      scope :by_number, -> (number:) { where(number: number) }
+
+      scope :count_scope, -> { count }
+    end
   end
 end

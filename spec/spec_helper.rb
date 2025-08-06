@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
+require 'simplecov'
+SimpleCov.start do
+  add_filter '/spec/'  # Optional: Exclude test files from coverage stats
+end
+
 require 'rspec'
 require 'active_query'
 require 'database_cleaner/active_record'
-require "byebug"
+require 'byebug'
 
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 
