@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
-require_relative 'query/version'
+require 'active_record'
+require 'active_support'
+require 'active_support/concern'
+require_relative 'active_query/resolver'
+require_relative 'active_record_relation_extensions'
 
 module ActiveQuery
   module Base
-    extend ActiveSupport::Concern
+    extend ::ActiveSupport::Concern
 
     class Boolean; end
 
@@ -14,13 +18,17 @@ module ActiveQuery
     end
 
     class_methods do
-       def model_name(model_name)
+      def model_name(model_name)
         classified_model_name = model_name.classify
         model = classified_model_name.safe_constantize
         raise NameError, "Model #{classified_model_name} not found" unless model
         raise ArgumentError, 'Model should be an ActiveRecord::Base' unless model.ancestors.include?(ActiveRecord::Base)
 
         @__model = model
+      end
+
+      def model
+        @__model
       end
 
       def scope
@@ -39,6 +47,8 @@ module ActiveQuery
       end
 
       def query(name, description, args_def_or_lambda = nil, lambda = nil, **kwargs)
+        raise ArgumentError, 'name must be present' unless name.present?
+
         if args_def_or_lambda.is_a?(Hash)
           if kwargs[:resolver].present?
             query_with_resolver(name, description, args_def_or_lambda, **kwargs)
@@ -62,7 +72,12 @@ module ActiveQuery
 
       def infer_model
         model_class_name = self.name.sub(/::Query$/, '').classify
-        model_name(model_class_name) if const_defined?(model_class_name)
+        return unless const_defined?(model_class_name)
+
+        model = model_class_name.safe_constantize
+        return unless model.ancestors.include?(ActiveRecord::Base)
+
+        model_name(model_class_name)
       end
 
       def query_with_arguments(name, description, args_def, lambda)
@@ -82,7 +97,7 @@ module ActiveQuery
       def query_with_resolver(name, description, args_def, **kwargs)
         register_query(name, description, args_def)
         resolver = kwargs[:resolver]
-        raise 'Invalid Resolver, must inherit from QOR::Resolvers::Base' unless resolver.ancestors.include?(QOR::Resolvers::Base)
+        raise 'Invalid Resolver, must inherit from ActiveQuery::Resolvers::Base' unless resolver.ancestors.include?(ActiveQuery::Resolver)
 
         define_singleton_method(name) do |given_args|
           given_args = validate_args(name, given_args, args_def)
@@ -91,9 +106,10 @@ module ActiveQuery
       end
 
       def query_with_resolver_without_out_args(name, description, **kwargs)
-        # register_query(name, description, args_def)
+        register_query(name, description)
         resolver = kwargs[:resolver]
-        raise 'Invalid Resolver, must inherit from QOR::Resolvers::Base' unless resolver.ancestors.include?(QOR::Resolvers::Base)
+        raise 'Invalid Resolver, must inherit from ActiveQuery::Resolvers::Base' unless resolver.ancestors.include?(ActiveQuery::Resolver)
+
         define_singleton_method(name) { resolver.new(scope).resolve }
       end
 
@@ -103,7 +119,7 @@ module ActiveQuery
         raise ArgumentError, "Optional and Default params can't be present together: #{optional_and_default.keys}" if optional_and_default.present?
 
         # Will add all queries for further serving the method 'queries'
-        @__queries << { name:, description:, args_def: }
+        @__queries << { name:, description:, args_def: }.compact_blank
       end
 
       def validate_args(name, given_args, args_def)
@@ -128,7 +144,7 @@ module ActiveQuery
           given_arg_name = given_arg.first
           given_arg_value = given_arg.second
 
-          if given_arg_type == QOR::Base::Boolean
+          if given_arg_type == ActiveQuery::Base::Boolean
             unless given_arg_value == true || given_arg_value == false
               raise ArgumentError, ":#{given_arg_name} must be of type Boolean"
             end
@@ -151,6 +167,8 @@ module ActiveQuery
       def lt(col, val) = __operation(:lt, col, val)
       def lteq(col, val) = __operation(:lteq, col, val)
       def like(col, val) = __operation(:matches, col, "%#{val}%")
+      def start_like(col, val) = __operation(:matches, col, "#{val}%")
+      def end_like(col, val) = __operation(:matches, col, "%#{val}")
       def __operation(op, col, val) = where(arel_table[col].send(op, val))
     end
   end

@@ -2,25 +2,75 @@ PATH
   remote: .
   specs:
     active-query (0.0.1)
+      activerecord (>= 6.1)
+      activesupport (>= 6.1)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    diff-lcs (1.5.1)
+    activemodel (7.2.2.1)
+      activesupport (= 7.2.2.1)
+    activerecord (7.2.2.1)
+      activemodel (= 7.2.2.1)
+      activesupport (= 7.2.2.1)
+      timeout (>= 0.4.0)
+    activesupport (7.2.2.1)
+      base64
+      benchmark (>= 0.3)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.3.1)
+      connection_pool (>= 2.2.5)
+      drb
+      i18n (>= 1.6, < 2)
+      logger (>= 1.4.2)
+      minitest (>= 5.1)
+      securerandom (>= 0.3)
+      tzinfo (~> 2.0, >= 2.0.5)
+    base64 (0.2.0)
+    benchmark (0.4.0)
+    bigdecimal (3.1.9)
+    byebug (11.1.3)
+    concurrent-ruby (1.3.4)
+    connection_pool (2.5.0)
+    database_cleaner-active_record (2.2.0)
+      activerecord (>= 5.a)
+      database_cleaner-core (~> 2.0.0)
+    database_cleaner-core (2.0.1)
+    diff-lcs (1.6.0)
+    docile (1.4.1)
+    drb (2.2.1)
+    i18n (1.14.6)
+      concurrent-ruby (~> 1.0)
+    json (2.10.1)
+    logger (1.6.6)
+    mini_portile2 (2.8.8)
+    minitest (5.25.4)
     rake (13.2.1)
-    rspec (3.13.0)
-      rspec-core (~> 3.13.0)
-      rspec-expectations (~> 3.13.0)
-      rspec-mocks (~> 3.13.0)
-    rspec-core (3.13.2)
-      rspec-support (~> 3.13.0)
-    rspec-expectations (3.13.3)
+    rspec (3.9.0)
+      rspec-core (~> 3.9.0)
+      rspec-expectations (~> 3.9.0)
+      rspec-mocks (~> 3.9.0)
+    rspec-core (3.9.3)
+      rspec-support (~> 3.9.3)
+    rspec-expectations (3.9.4)
       diff-lcs (>= 1.2.0, < 2.0)
-      rspec-support (~> 3.13.0)
-    rspec-mocks (3.13.2)
+      rspec-support (~> 3.9.0)
+    rspec-mocks (3.9.1)
       diff-lcs (>= 1.2.0, < 2.0)
-      rspec-support (~> 3.13.0)
-    rspec-support (3.13.2)
+      rspec-support (~> 3.9.0)
+    rspec-support (3.9.4)
+    securerandom (0.4.1)
+    simplecov (0.17.1)
+      docile (~> 1.1)
+      json (>= 1.8, < 3)
+      simplecov-html (~> 0.10.0)
+    simplecov-html (0.10.2)
+    sqlite3 (1.5.4)
+      mini_portile2 (~> 2.8.0)
+    sqlite3 (1.5.4-arm64-darwin)
+    timeout (0.4.3)
+    tzinfo (2.0.6)
+      concurrent-ruby (~> 1.0)
 
 PLATFORMS
   arm64-darwin-22
@@ -28,8 +78,12 @@ PLATFORMS
 
 DEPENDENCIES
   active-query!
+  byebug
+  database_cleaner-active_record (~> 2.2.0)
   rake (~> 13.0)
-  rspec (~> 3.0)
+  rspec (~> 3.9.0)
+  simplecov (~> 0.17.1)
+  sqlite3 (~> 1.5.1)
 
 BUNDLED WITH
    2.5.23

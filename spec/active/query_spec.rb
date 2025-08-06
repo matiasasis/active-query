@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-RSpec.describe ActiveQuery do
-  it "has a version number" do
-    expect(ActiveQuery::VERSION).not_to be nil
-  end
+require 'spec_helper'
 
-  it "does something useful" do
-    expect(false).to eq(true)
+RSpec.describe ActiveQuery do
+  describe 'version number' do
+    it "has a version number" do
+      expect(ActiveQuery::VERSION).not_to be nil
+    end
   end
 end
