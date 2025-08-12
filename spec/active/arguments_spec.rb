@@ -24,7 +24,7 @@ RSpec.describe 'Arguments' do
       subject { DummyModels::Query.by_name }
 
       it 'raises an error because args are not provided' do
-        expect { subject }.to raise_error(ArgumentError, 'wrong number of arguments (given 0, expected 1)')
+        expect { subject }.to raise_error(ArgumentError, 'Params missing: [:name]')
       end
     end
 
@@ -71,6 +71,24 @@ RSpec.describe 'Arguments' do
 
       it 'returns the dummy model that matches criteria' do
         expect { subject }.to raise_error(ArgumentError, ':active must be of type Boolean')
+      end
+    end
+
+    context 'when query only has 1 argument and is optional' do
+      context 'when param is not given' do
+        subject { DummyModels::Query.only_optional_argument }
+
+        it 'executes the query properly' do
+          expect(subject).to eq(3)
+        end
+      end
+
+      context 'when param is given' do
+        subject { DummyModels::Query.only_optional_argument(number: 1) }
+
+        it 'executes the query properly' do
+          expect(subject).to eq(2)
+        end
       end
     end
   end

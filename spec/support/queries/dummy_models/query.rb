@@ -74,6 +74,13 @@ module DummyModels
 
     query :count_with_scope, 'Returns the count of the scope', -> { scope.count_scope }
 
+    query :only_optional_argument,
+      'Tests whether query supports only 1 argument that is optional',
+      { number: { type: Integer, optional: true } },
+      -> (number:) {
+        scope.if(number, -> { where(number: number) }).count
+      }
+
     module Scopes
       include ::ActiveQuery::Scopes
 
