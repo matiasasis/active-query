@@ -84,7 +84,7 @@ module ActiveQuery
       def query_with_arguments(name, description, args_def, lambda)
         register_query(name, description, args_def)
 
-        define_singleton_method(name) do |given_args|
+        define_singleton_method(name) do |given_args = {}|
           given_args = validate_args(name, given_args, args_def)
           lambda.call(**given_args)
         end
