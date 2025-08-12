@@ -36,14 +36,14 @@ Create a query object by including `ActiveQuery::Base` and defining queries with
 ```ruby
 class UserQuery
   include ActiveQuery::Base
-  
+
   # The model is automatically inferred from the class name (User)
   # Or explicitly set it:
   model_name 'User'
-  
+
   # Simple query without arguments
   query :active, 'Returns all active users', -> { scope.where(active: true) }
-  
+
   # Query with arguments and type validation
   query :by_email, 'Find users by email address',
     { email: { type: String } },
@@ -69,13 +69,13 @@ ActiveQuery supports several argument types with automatic validation:
 ```ruby
 class ProductQuery
   include ActiveQuery::Base
-  
+
   query :filter_products, 'Filter products by various criteria',
     {
       name: { type: String },
       price: { type: Float },
       quantity: { type: Integer },
-      available: { type: ActiveQuery::Base::Boolean }
+      available: { type: Boolean }
     },
     -> (name:, price:, quantity:, available:) {
       scope.where(name: name)
@@ -102,17 +102,17 @@ ProductQuery.filter_products(name: 123, price: 'invalid', quantity: true, availa
 ```ruby
 class OrderQuery
   include ActiveQuery::Base
-  
+
   query :search_orders, 'Search orders with optional filters',
     {
       status: { type: String },
-      paid: { type: ActiveQuery::Base::Boolean, default: true },
+      paid: { type: Boolean, default: true },
       customer_name: { type: String, optional: true }
     },
     -> (status:, paid:, customer_name:) {
       scope.where(status: status)
            .where(paid: paid)
-           .then { |s| customer_name ? s.where('customer_name LIKE ?', "%#{customer_name}%") : s }
+           .if(customer_name, -> { where('customer_name LIKE ?', "%#{customer_name}%") })
     }
 end
 
@@ -129,17 +129,17 @@ Use `if` and `unless` methods for conditional query building:
 ```ruby
 class UserQuery
   include ActiveQuery::Base
-  
+
   query :search_users, 'Search users with conditional filters',
     {
       name: { type: String, optional: true },
-      active: { type: ActiveQuery::Base::Boolean, optional: true }
+      active: { type: Boolean, optional: true }
     },
     -> (name:, active:) {
       scope.if(name.present?, -> { where('name LIKE ?', "%#{name}%") })
            .if(active == true, -> { where(active: true) })
     }
-  
+
   query :filter_unless_admin, 'Filter users unless they are admin',
     {
       role: { type: String, optional: true }
@@ -157,16 +157,16 @@ ActiveQuery provides additional query operations beyond standard ActiveRecord:
 ```ruby
 class ProductQuery
   include ActiveQuery::Base
-  
+
   # Comparison operations
   query :expensive_products, 'Products above price threshold', -> { scope.gt(:price, 100) }
   query :affordable_products, 'Products within budget', -> { scope.lteq(:price, 50) }
-  
-  # Text search operations  
+
+  # Text search operations
   query :search_by_name, 'Search products by name pattern', -> { scope.like(:name, 'Phone') }
   query :products_starting_with, 'Products starting with prefix', -> { scope.start_like(:name, 'iPhone') }
   query :products_ending_with, 'Products ending with suffix', -> { scope.end_like(:name, 'Pro') }
-  
+
   # Dynamic filtering
   query :by_price_range, 'Filter by price range',
     { min_price: { type: Float }, max_price: { type: Float } },
@@ -179,11 +179,11 @@ end
 
 **Available operations:**
 - `gt(column, value)` - greater than
-- `gteq(column, value)` - greater than or equal  
+- `gteq(column, value)` - greater than or equal
 - `lt(column, value)` - less than
 - `lteq(column, value)` - less than or equal
 - `like(column, value)` - contains pattern (wraps with %)
-- `start_like(column, value)` - starts with pattern  
+- `start_like(column, value)` - starts with pattern
 - `end_like(column, value)` - ends with pattern
 
 ### Custom Scopes
@@ -194,18 +194,18 @@ Define reusable scopes within your query objects:
 class UserQuery
   include ActiveQuery::Base
   include ActiveQuery::Scopes
-  
+
   # Define custom scopes
   module Scopes
     include ActiveQuery::Scopes
-    
+
     scope :recent, -> { where('created_at > ?', 1.month.ago) }
     scope :by_role, -> (role:) { where(role: role) }
   end
-  
+
   # Use scopes in queries
   query :recent_admins, 'Find recent admin users', -> { scope.recent.by_role(role: 'admin') }
-  
+
   query :count_recent, 'Count recent users', -> { scope.recent.count }
 end
 ```
@@ -228,11 +228,11 @@ end
 # Use resolver in query object
 class UserQuery
   include ActiveQuery::Base
-  
+
   # Resolver without arguments
-  query :high_value_users, 'Users with many orders', 
+  query :high_value_users, 'Users with many orders',
     resolver: UserStatsResolver
-  
+
   # Resolver with arguments
   query :users_with_orders, 'Users with minimum order count',
     { min_orders: { type: Integer } },
@@ -251,7 +251,7 @@ Query objects provide metadata about available queries:
 ```ruby
 class UserQuery
   include ActiveQuery::Base
-  
+
   query :active, 'Find active users', -> { scope.where(active: true) }
   query :by_name, 'Find by name', { name: { type: String } }, -> (name:) { scope.where(name: name) }
 end
@@ -296,7 +296,7 @@ ActiveQuery works seamlessly with Rails applications:
 # app/queries/user_query.rb
 class UserQuery
   include ActiveQuery::Base
-  
+
   query :active, 'Active users', -> { scope.where(active: true) }
   query :by_role, 'Users by role', { role: { type: String } }, -> (role:) { scope.where(role: role) }
 end
@@ -306,7 +306,7 @@ class UsersController < ApplicationController
   def index
     @users = UserQuery.active
   end
-  
+
   def admins
     @admins = UserQuery.by_role(role: 'admin')
   end
