@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "ActiveQuery is a gem that helps you to create query objects in a simple way. It provides a DSL to define queries and scopes for your query object."
   spec.homepage = "https://github.com/matiasasis/active-query"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 2.6.0"
+  spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/matiasasis/active-query"
   spec.metadata["bug_tracker_uri"] = "https://github.com/matiasasis/active-query/issues"
@@ -32,8 +32,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   # Dependencies
-  spec.add_dependency 'activerecord', '>= 6.1', '< 8.0'
-  spec.add_dependency 'activesupport', '>= 6.1', '< 8.0'
+  spec.add_dependency 'activerecord', '>= 6.1', '< 9.0'
+  spec.add_dependency 'activesupport', '>= 6.1', '< 9.0'
 
   # Dev dependencies
   spec.add_development_dependency 'rake', '~> 13.0'

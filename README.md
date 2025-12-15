@@ -318,9 +318,9 @@ end
 
 ## Requirements
 
-- Ruby >= 2.6.0
-- ActiveRecord >= 6.1
-- ActiveSupport >= 6.1
+- Ruby >= 3.2.0
+- ActiveRecord >= 6.1, < 9.0
+- ActiveSupport >= 6.1, < 9.0
 
 ## Development
 
