@@ -1,33 +1,30 @@
 PATH
   remote: .
   specs:
-    active-query (0.1.2)
-      activerecord (>= 6.1, < 8.0)
-      activesupport (>= 6.1, < 8.0)
+    active-query (0.1.3)
+      activerecord (>= 6.1, < 9.0)
+      activesupport (>= 6.1, < 9.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (7.2.2.1)
-      activesupport (= 7.2.2.1)
-    activerecord (7.2.2.1)
-      activemodel (= 7.2.2.1)
-      activesupport (= 7.2.2.1)
+    activemodel (7.1.4.2)
+      activesupport (= 7.1.4.2)
+    activerecord (7.1.4.2)
+      activemodel (= 7.1.4.2)
+      activesupport (= 7.1.4.2)
       timeout (>= 0.4.0)
-    activesupport (7.2.2.1)
+    activesupport (7.1.4.2)
       base64
-      benchmark (>= 0.3)
       bigdecimal
-      concurrent-ruby (~> 1.0, >= 1.3.1)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
       connection_pool (>= 2.2.5)
       drb
       i18n (>= 1.6, < 2)
-      logger (>= 1.4.2)
       minitest (>= 5.1)
-      securerandom (>= 0.3)
-      tzinfo (~> 2.0, >= 2.0.5)
+      mutex_m
+      tzinfo (~> 2.0)
     base64 (0.2.0)
-    benchmark (0.4.0)
     bigdecimal (3.1.9)
     byebug (11.1.3)
     concurrent-ruby (1.3.4)
@@ -42,9 +39,9 @@ GEM
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
     json (2.10.1)
-    logger (1.6.6)
     mini_portile2 (2.8.8)
     minitest (5.25.4)
+    mutex_m (0.3.0)
     rake (13.2.1)
     rspec (3.9.0)
       rspec-core (~> 3.9.0)
@@ -59,7 +56,6 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.9.0)
     rspec-support (3.9.4)
-    securerandom (0.4.1)
     simplecov (0.17.1)
       docile (~> 1.1)
       json (>= 1.8, < 3)
@@ -67,7 +63,6 @@ GEM
     simplecov-html (0.10.2)
     sqlite3 (1.5.4)
       mini_portile2 (~> 2.8.0)
-    sqlite3 (1.5.4-arm64-darwin)
     timeout (0.4.3)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
@@ -86,4 +81,4 @@ DEPENDENCIES
   sqlite3 (~> 1.5.1)
 
 BUNDLED WITH
-   2.5.23
+   2.5.6
