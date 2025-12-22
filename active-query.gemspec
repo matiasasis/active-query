@@ -39,7 +39,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'rspec', '~> 3.9.0'
   spec.add_development_dependency 'simplecov', '~> 0.17.1'
-  spec.add_development_dependency 'sqlite3', '~> 1.5.1'
+  spec.add_development_dependency 'sqlite3', '>= 1.5.1', '< 3.0'
   spec.add_development_dependency 'database_cleaner-active_record', '~> 2.2.0'
   spec.add_development_dependency 'byebug', '~> 11.0'
+  spec.add_development_dependency 'appraisal', '~> 2.4'
 end

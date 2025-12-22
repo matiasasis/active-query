@@ -11,3 +11,7 @@
 .rspec_status
 .ruby-version
 .byebug_history
+
+# gemfiles for testing multiple Rails versions
+/gemfiles/*.lock
+/gemfiles/.bundle/
