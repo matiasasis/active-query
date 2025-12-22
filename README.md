@@ -322,11 +322,70 @@ end
 - ActiveRecord >= 6.1, < 9.0
 - ActiveSupport >= 6.1, < 9.0
 
+### Rails 8 Support
+
+ActiveQuery fully supports Rails 8.0! Note that Rails 8 requires SQLite3 version 2.1 or higher:
+
+```ruby
+# For Rails 8 applications
+gem 'sqlite3', '~> 2.1'
+
+# For Rails 7 and below
+gem 'sqlite3', '~> 1.4'
+```
+
+See [RAILS_8_MIGRATION.md](RAILS_8_MIGRATION.md) for detailed migration instructions.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`.
+
+### Testing Against Multiple Rails Versions
+
+This gem is tested against Rails 7.0, 7.1, and 8.0 to ensure compatibility across versions.
+
+#### Running Tests Locally
+
+To test against all supported Rails versions locally:
+
+```bash
+# Test against all Rails versions
+./bin/test_all_rails
+
+# Test against a specific Rails version
+BUNDLE_GEMFILE=gemfiles/rails_7_0.gemfile bundle exec rake spec
+BUNDLE_GEMFILE=gemfiles/rails_7_1.gemfile bundle exec rake spec
+BUNDLE_GEMFILE=gemfiles/rails_8_0.gemfile bundle exec rake spec
+```
+
+#### Using Appraisal (Alternative Method)
+
+If you prefer using the `appraisal` gem:
+
+```bash
+# Install appraisal gemfiles
+bundle exec appraisal install
+
+# Run tests against all Rails versions
+bundle exec appraisal rake spec
+
+# Run tests against specific Rails version
+bundle exec appraisal rails-7-0 rake spec
+bundle exec appraisal rails-7-1 rake spec
+bundle exec appraisal rails-8-0 rake spec
+```
+
+#### Continuous Integration
+
+The gem uses GitHub Actions to automatically test against multiple Ruby and Rails versions in a matrix configuration. Each push and pull request triggers tests across:
+
+- Ruby versions: 3.2, 3.3
+- Rails versions: 7.0, 7.1, 8.0
+- Appropriate SQLite3 versions for each Rails version (1.4 for Rails 7.x, 2.1+ for Rails 8.0)
+
+See `.github/workflows/main.yml` for the complete CI configuration.
 
 ## Contributing
 

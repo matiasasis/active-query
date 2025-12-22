@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+# Script to test against all Rails versions locally
+set -e
+
+echo "Testing Active Query against multiple Rails versions..."
+echo "=================================================="
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Test results tracking
+PASSED=0
+FAILED=0
+TOTAL=0
+
+test_rails_version() {
+  local version=$1
+  local gemfile=$2
+  
+  echo -e "\n${YELLOW}Testing Rails ${version}...${NC}"
+  echo "Using gemfile: ${gemfile}"
+  echo "----------------------------------------"
+  
+  TOTAL=$((TOTAL + 1))
+  
+  # Clean up any existing lock files for this gemfile
+  rm -f "${gemfile}.lock"
+  
+  if BUNDLE_GEMFILE=$gemfile bundle install --quiet && BUNDLE_GEMFILE=$gemfile bundle exec rake spec; then
+    echo -e "${GREEN}✓ Rails ${version} tests passed${NC}"
+    PASSED=$((PASSED + 1))
+  else
+    echo -e "${RED}✗ Rails ${version} tests failed${NC}"
+    FAILED=$((FAILED + 1))
+  fi
+}
+
+# Clean up any existing gemfiles
+echo "Cleaning up previous test runs..."
+rm -f gemfiles/*.lock
+rm -f gemfiles/.bundle/
+
+echo -e "\n${YELLOW}Note: Rails 8.0 requires SQLite3 >= 2.1${NC}"
+echo -e "${YELLOW}Rails 7.x uses SQLite3 ~> 1.4${NC}"
+
+# Test each Rails version
+test_rails_version "7.0" "gemfiles/rails_7_0.gemfile"
+test_rails_version "7.1" "gemfiles/rails_7_1.gemfile"
+test_rails_version "8.0" "gemfiles/rails_8_0.gemfile"
+
+# Summary
+echo -e "\n=================================================="
+echo -e "Test Summary:"
+echo -e "${GREEN}Passed: ${PASSED}${NC}"
+echo -e "${RED}Failed: ${FAILED}${NC}"
+echo -e "Total:  ${TOTAL}"
+
+if [ $FAILED -eq 0 ]; then
+  echo -e "\n${GREEN}All tests passed! 🎉${NC}"
+  exit 0
+else
+  echo -e "\n${RED}Some tests failed! 😞${NC}"
+  exit 1
+fi
