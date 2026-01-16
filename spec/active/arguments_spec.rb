@@ -91,5 +91,59 @@ RSpec.describe 'Arguments' do
         end
       end
     end
+
+    context 'when optional parameter is explicitly passed as nil' do
+      context 'with a Boolean optional parameter' do
+        subject { DummyModels::Query.number_if_active(number: 1, active: nil) }
+
+        it 'allows nil and executes the query' do
+          expect(subject).to include(dummy1, dummy2)
+        end
+      end
+
+      context 'with an Integer optional parameter' do
+        subject { DummyModels::Query.only_optional_argument(number: nil) }
+
+        it 'allows nil and executes the query' do
+          expect(subject).to eq(3)
+        end
+      end
+
+      context 'with a String optional parameter' do
+        subject { DummyModels::Query.example_with_default(number: 1, name: nil) }
+
+        it 'allows nil and executes the query' do
+          # Only dummy2 matches because default active: true filters out dummy1 (active: false)
+          expect(subject).to include(dummy2)
+          expect(subject).not_to include(dummy1)
+        end
+      end
+    end
+
+    context 'when required parameter is passed as nil' do
+      context 'with a String required parameter' do
+        subject { DummyModels::Query.by_name(name: nil) }
+
+        it 'raises a type error' do
+          expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+        end
+      end
+
+      context 'with an Integer required parameter' do
+        subject { DummyModels::Query.by_number(number: nil) }
+
+        it 'raises a type error' do
+          expect { subject }.to raise_error(ArgumentError, ':number must be of type Integer')
+        end
+      end
+
+      context 'with a Boolean required parameter' do
+        subject { DummyModels::Query.all_args(name: 'Dummy1', number: 1, active: nil) }
+
+        it 'raises a type error' do
+          expect { subject }.to raise_error(ArgumentError, ':active must be of type Boolean')
+        end
+      end
+    end
   end
 end

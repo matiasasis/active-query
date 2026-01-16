@@ -144,6 +144,10 @@ module ActiveQuery
           given_arg_type = given_arg_config[:type]
           given_arg_name = given_arg.first
           given_arg_value = given_arg.second
+          given_arg_optional = given_arg_config[:optional] == true
+
+          # Allow nil values for optional parameters
+          next if given_arg_value.nil? && given_arg_optional
 
           if given_arg_type == ActiveQuery::Base::Boolean
             unless given_arg_value == true || given_arg_value == false
