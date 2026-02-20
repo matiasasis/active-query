@@ -38,6 +38,18 @@ RSpec.describe ActiveQuery::Filters::RecordFilter do
       end
     end
 
+    context 'with custom finder option' do
+      subject(:filter) { described_class.new(:model, type: :record, class: DummyModel, finder: :find_by_name) }
+
+      it 'uses the custom finder method' do
+        expect(filter.process('Test')).to eq(dummy)
+      end
+
+      it 'returns nil when the custom finder returns nil' do
+        expect(filter.process('Nonexistent')).to be_nil
+      end
+    end
+
     context 'with class as type (backward compat)' do
       subject(:filter) { described_class.new(:model, type: DummyModel) }
 

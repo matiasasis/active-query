@@ -32,10 +32,14 @@ module ActiveQuery
         end
       end
 
+      def finder_method
+        options[:finder] || :find
+      end
+
       def cast(value)
         case value
         when String, Integer
-          record_class.find(value)
+          record_class.public_send(finder_method, value)
         else
           raise ArgumentError, ":#{name} must be of type #{record_class}"
         end
