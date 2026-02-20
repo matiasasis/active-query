@@ -5,6 +5,19 @@ require 'active_support'
 require 'active_support/concern'
 require_relative 'active_query/version'
 require_relative 'active_query/resolver'
+require_relative 'active_query/filters/base'
+require_relative 'active_query/filters/string_filter'
+require_relative 'active_query/filters/integer_filter'
+require_relative 'active_query/filters/float_filter'
+require_relative 'active_query/filters/boolean_filter'
+require_relative 'active_query/filters/date_filter'
+require_relative 'active_query/filters/date_time_filter'
+require_relative 'active_query/filters/symbol_filter'
+require_relative 'active_query/filters/decimal_filter'
+require_relative 'active_query/filters/record_filter'
+require_relative 'active_query/filters/array_filter'
+require_relative 'active_query/filters/hash_filter'
+require_relative 'active_query/filters/registry'
 require_relative 'active_record_relation_extensions'
 
 module ActiveQuery
@@ -37,7 +50,9 @@ module ActiveQuery
 
         @__scope ||= begin
           relation = @__model.all.extending(Operations)
-          relation = relation.extending(scopes_module_name.constantize) if const_defined?(scopes_module_name)
+          if self.name && const_defined?(scopes_module_name)
+            relation = relation.extending(scopes_module_name.constantize)
+          end
           relation
         end
       end
@@ -72,6 +87,8 @@ module ActiveQuery
       end
 
       def infer_model
+        return unless self.name
+
         model_class_name = self.name.sub(/::Query$/, '').classify
         return unless const_defined?(model_class_name)
 
@@ -127,10 +144,15 @@ module ActiveQuery
         # Validate if the given arguments are correct
         raise ArgumentError, "Incorrect Params, must be called '.#{name}(#{args_def.keys.map { |p| "#{p}: value" }.join(', ')})' " unless given_args.is_a?(Hash)
 
-        non_optional_args = args_def.reject { |key, value| value[:optional] == true }
+        # Build filter objects for each argument definition
+        filters = args_def.each_with_object({}) do |(arg_name, opts), hash|
+          hash[arg_name] = Filters::Registry.build(arg_name, **opts)
+        end
+
+        non_optional_args = args_def.reject { |_key, value| value[:optional] == true }
         args_not_provided = non_optional_args.keys - given_args.keys
 
-        args_with_default_to_add = args_def.select { |key, value| value[:default].present? && args_not_provided.include?(key) }
+        args_with_default_to_add = args_def.select { |key, value| !value[:default].nil? && args_not_provided.include?(key) }
         given_args.merge!(args_with_default_to_add.map { |key, value| [key, value[:default]] }.to_h)
 
         missing_args = non_optional_args.keys - given_args.keys
@@ -139,21 +161,10 @@ module ActiveQuery
         extra_params = given_args.keys - args_def.keys
         raise ArgumentError, "Unknown params: #{extra_params}" unless extra_params.empty?
 
-        given_args.each do |given_arg|
-          given_arg_config = args_def[given_arg.first]
-          given_arg_type = given_arg_config[:type]
-          given_arg_name = given_arg.first
-          given_arg_value = given_arg.second
-
-          if given_arg_type == ActiveQuery::Base::Boolean
-            unless given_arg_value == true || given_arg_value == false
-              raise ArgumentError, ":#{given_arg_name} must be of type Boolean"
-            end
-          else
-            unless given_arg_value.instance_of?(given_arg_type)
-              raise ArgumentError, ":#{given_arg_name} must be of type #{given_arg_type}"
-            end
-          end
+        # Validate and coerce each argument using its filter
+        given_args.each do |arg_name, arg_value|
+          filter = filters[arg_name]
+          given_args[arg_name] = filter.process(arg_value)
         end
 
         # Populates all the non optional non given arguments with nil.
@@ -190,4 +201,7 @@ module ActiveQuery
       end
     end
   end
+
+  # Register the legacy Boolean sentinel class now that Base is defined
+  Filters::Registry.register_boolean_sentinel!
 end

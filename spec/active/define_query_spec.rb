@@ -24,11 +24,11 @@ RSpec.describe 'Define Query' do
           expect(subject).to include(dummy2)
         end
 
-        context 'when invalid arg type is given' do
+        context 'when coercible arg type is given' do
           subject { DummyModels::Query.by_name(name: 10) }
 
-          it 'returns corresponding to the invalid argument type' do
-            expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+          it 'coerces the value and executes the query' do
+            expect(subject).to eq([]) # "10" matches no dummy model names
           end
         end
       end
@@ -51,11 +51,11 @@ RSpec.describe 'Define Query' do
           expect(subject).to include(dummy2)
         end
 
-        context 'when invalid arg type is given' do
+        context 'when coercible arg type is given' do
           subject { DummyModels::Query.by_name_resolver(name: 10) }
 
-          it 'returns corresponding to the invalid argument type' do
-            expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+          it 'coerces the value and executes the query' do
+            expect(subject).to eq([]) # "10" matches no dummy model names
           end
         end
       end
