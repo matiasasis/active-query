@@ -7,58 +7,58 @@ RSpec.describe ActiveQuery::Filters::RecordFilter do
 
   describe '#process' do
     context 'with class option' do
-      subject(:filter) { described_class.new(:model, type: :record, class: DummyModel) }
+      subject { described_class.new(:model, type: :record, class: DummyModel) }
 
       it 'passes through instances of the class' do
-        expect(filter.process(dummy)).to eq(dummy)
+        expect(subject.process(dummy)).to eq(dummy)
       end
 
       it 'coerces integer ids via find' do
-        expect(filter.process(dummy.id)).to eq(dummy)
+        expect(subject.process(dummy.id)).to eq(dummy)
       end
 
       it 'coerces string ids via find' do
-        expect(filter.process(dummy.id.to_s)).to eq(dummy)
+        expect(subject.process(dummy.id.to_s)).to eq(dummy)
       end
 
       it 'raises for non-existent records' do
-        expect { filter.process(999999) }.to raise_error(ArgumentError, /record not found/)
+        expect { subject.process(999999) }.to raise_error(ArgumentError, /record not found/)
       end
 
       it 'returns nil for nil' do
-        expect(filter.process(nil)).to be_nil
+        expect(subject.process(nil)).to be_nil
       end
     end
 
     context 'with string class option' do
-      subject(:filter) { described_class.new(:model, type: :record, class: 'DummyModel') }
+      subject { described_class.new(:model, type: :record, class: 'DummyModel') }
 
       it 'resolves the class from string and finds records' do
-        expect(filter.process(dummy.id)).to eq(dummy)
+        expect(subject.process(dummy.id)).to eq(dummy)
       end
     end
 
     context 'with custom finder option' do
-      subject(:filter) { described_class.new(:model, type: :record, class: DummyModel, finder: :find_by_name) }
+      subject { described_class.new(:model, type: :record, class: DummyModel, finder: :find_by_name) }
 
       it 'uses the custom finder method' do
-        expect(filter.process('Test')).to eq(dummy)
+        expect(subject.process('Test')).to eq(dummy)
       end
 
       it 'returns nil when the custom finder returns nil' do
-        expect(filter.process('Nonexistent')).to be_nil
+        expect(subject.process('Nonexistent')).to be_nil
       end
     end
 
     context 'with class as type (backward compat)' do
-      subject(:filter) { described_class.new(:model, type: DummyModel) }
+      subject { described_class.new(:model, type: DummyModel) }
 
       it 'uses the type as the record class' do
-        expect(filter.process(dummy)).to eq(dummy)
+        expect(subject.process(dummy)).to eq(dummy)
       end
 
       it 'coerces integer ids via find' do
-        expect(filter.process(dummy.id)).to eq(dummy)
+        expect(subject.process(dummy.id)).to eq(dummy)
       end
     end
   end
