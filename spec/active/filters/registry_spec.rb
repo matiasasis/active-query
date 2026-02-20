@@ -4,74 +4,89 @@ require 'spec_helper'
 
 RSpec.describe ActiveQuery::Filters::Registry do
   describe '.build' do
-    it 'builds a StringFilter for :string type' do
-      filter = described_class.build(:name, type: :string)
-      expect(filter).to be_a(ActiveQuery::Filters::StringFilter)
+    context 'with :string type' do
+      subject { described_class.build(:name, type: :string) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::StringFilter) }
     end
 
-    it 'builds an IntegerFilter for :integer type' do
-      filter = described_class.build(:count, type: :integer)
-      expect(filter).to be_a(ActiveQuery::Filters::IntegerFilter)
+    context 'with :integer type' do
+      subject { described_class.build(:count, type: :integer) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::IntegerFilter) }
     end
 
-    it 'builds a BooleanFilter for :boolean type' do
-      filter = described_class.build(:active, type: :boolean)
-      expect(filter).to be_a(ActiveQuery::Filters::BooleanFilter)
+    context 'with :boolean type' do
+      subject { described_class.build(:active, type: :boolean) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::BooleanFilter) }
     end
 
-    it 'builds a DateFilter for :date type' do
-      filter = described_class.build(:start, type: :date)
-      expect(filter).to be_a(ActiveQuery::Filters::DateFilter)
+    context 'with :date type' do
+      subject { described_class.build(:start, type: :date) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::DateFilter) }
     end
 
-    it 'builds a DateTimeFilter for :date_time type' do
-      filter = described_class.build(:ts, type: :date_time)
-      expect(filter).to be_a(ActiveQuery::Filters::DateTimeFilter)
+    context 'with :date_time type' do
+      subject { described_class.build(:ts, type: :date_time) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::DateTimeFilter) }
     end
 
-    it 'builds a SymbolFilter for :symbol type' do
-      filter = described_class.build(:status, type: :symbol)
-      expect(filter).to be_a(ActiveQuery::Filters::SymbolFilter)
+    context 'with :symbol type' do
+      subject { described_class.build(:status, type: :symbol) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::SymbolFilter) }
     end
 
-    it 'builds a DecimalFilter for :decimal type' do
-      filter = described_class.build(:amount, type: :decimal)
-      expect(filter).to be_a(ActiveQuery::Filters::DecimalFilter)
+    context 'with :decimal type' do
+      subject { described_class.build(:amount, type: :decimal) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::DecimalFilter) }
     end
 
-    it 'builds an ArrayFilter for :array type' do
-      filter = described_class.build(:tags, type: :array)
-      expect(filter).to be_a(ActiveQuery::Filters::ArrayFilter)
+    context 'with :array type' do
+      subject { described_class.build(:tags, type: :array) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::ArrayFilter) }
     end
 
-    it 'builds a HashFilter for :hash type' do
-      filter = described_class.build(:opts, type: :hash)
-      expect(filter).to be_a(ActiveQuery::Filters::HashFilter)
+    context 'with :hash type' do
+      subject { described_class.build(:opts, type: :hash) }
+
+      it { is_expected.to be_a(ActiveQuery::Filters::HashFilter) }
     end
 
-    it 'raises for unknown symbol type' do
-      expect { described_class.build(:x, type: :unknown) }.to raise_error(ArgumentError, 'Unknown filter type: unknown')
+    context 'with unknown symbol type' do
+      it 'raises an ArgumentError' do
+        expect { described_class.build(:x, type: :unknown) }.to raise_error(ArgumentError, 'Unknown filter type: unknown')
+      end
     end
 
     context 'with Class-based types (backward compatibility)' do
-      it 'builds a StringFilter for String class' do
-        filter = described_class.build(:name, type: String)
-        expect(filter).to be_a(ActiveQuery::Filters::StringFilter)
+      context 'with String class' do
+        subject { described_class.build(:name, type: String) }
+
+        it { is_expected.to be_a(ActiveQuery::Filters::StringFilter) }
       end
 
-      it 'builds an IntegerFilter for Integer class' do
-        filter = described_class.build(:count, type: Integer)
-        expect(filter).to be_a(ActiveQuery::Filters::IntegerFilter)
+      context 'with Integer class' do
+        subject { described_class.build(:count, type: Integer) }
+
+        it { is_expected.to be_a(ActiveQuery::Filters::IntegerFilter) }
       end
 
-      it 'builds a BooleanFilter for legacy Boolean class' do
-        filter = described_class.build(:active, type: ActiveQuery::Base::Boolean)
-        expect(filter).to be_a(ActiveQuery::Filters::BooleanFilter)
+      context 'with legacy Boolean class' do
+        subject { described_class.build(:active, type: ActiveQuery::Base::Boolean) }
+
+        it { is_expected.to be_a(ActiveQuery::Filters::BooleanFilter) }
       end
 
-      it 'builds a RecordFilter for unrecognized classes' do
-        filter = described_class.build(:model, type: DummyModel)
-        expect(filter).to be_a(ActiveQuery::Filters::RecordFilter)
+      context 'with unrecognized class' do
+        subject { described_class.build(:model, type: DummyModel) }
+
+        it { is_expected.to be_a(ActiveQuery::Filters::RecordFilter) }
       end
     end
   end
