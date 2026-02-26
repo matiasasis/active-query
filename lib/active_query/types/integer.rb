@@ -8,7 +8,7 @@ module ActiveQuery
       end
 
       def self.coerce(value)
-        ::Kernel.Integer(value)
+        ::Kernel.Integer(value, 10)
       rescue ArgumentError, TypeError
         value
       end
