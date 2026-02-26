@@ -11,7 +11,10 @@ module ActiveQuery
   module Base
     extend ::ActiveSupport::Concern
 
-    class Boolean; end
+    class Boolean
+      def self.to_s = 'Boolean'
+      def self.inspect = 'Boolean'
+    end
 
     included do
       infer_model
@@ -139,20 +142,20 @@ module ActiveQuery
         extra_params = given_args.keys - args_def.keys
         raise ArgumentError, "Unknown params: #{extra_params}" unless extra_params.empty?
 
-        given_args.each do |given_arg|
-          given_arg_config = args_def[given_arg.first]
+        given_args.each do |given_arg_name, given_arg_value|
+          given_arg_config = args_def[given_arg_name]
           given_arg_type = given_arg_config[:type]
-          given_arg_name = given_arg.first
-          given_arg_value = given_arg.second
 
-          if given_arg_type == ActiveQuery::Base::Boolean
-            unless given_arg_value == true || given_arg_value == false
-              raise ArgumentError, ":#{given_arg_name} must be of type Boolean"
-            end
-          else
-            unless given_arg_value.is_a?(given_arg_type)
-              raise ArgumentError, ":#{given_arg_name} must be of type #{given_arg_type}"
-            end
+          if given_arg_config[:coerce]
+            given_args[given_arg_name] = given_arg_config[:coerce].call(given_arg_value)
+            given_arg_value = given_args[given_arg_name]
+          elsif ActiveQuery::TypeRegistry.coercer?(given_arg_type)
+            given_args[given_arg_name] = ActiveQuery::TypeRegistry.coerce(given_arg_type, given_arg_value)
+            given_arg_value = given_args[given_arg_name]
+          end
+
+          unless ActiveQuery::TypeRegistry.valid?(given_arg_type, given_arg_value)
+            raise ArgumentError, ":#{given_arg_name} must be of type #{given_arg_type}"
           end
         end
 
@@ -173,6 +176,9 @@ module ActiveQuery
       def __operation(op, col, val) = where(arel_table[col].send(op, val))
     end
   end
+
+  require_relative 'active_query/type_registry'
+  TypeRegistry.register(Base::Boolean, validator: ->(val) { val == true || val == false })
 
   module Scopes
     extend ActiveSupport::Concern
