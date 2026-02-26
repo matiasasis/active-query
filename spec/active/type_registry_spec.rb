@@ -34,19 +34,19 @@ RSpec.describe ActiveQuery::TypeRegistry do
 
     context 'with Boolean validation' do
       it 'accepts true' do
-        expect(described_class.valid?(ActiveQuery::Base::Boolean, true)).to be true
+        expect(described_class.valid?(ActiveQuery::Types::Boolean, true)).to be true
       end
 
       it 'accepts false' do
-        expect(described_class.valid?(ActiveQuery::Base::Boolean, false)).to be true
+        expect(described_class.valid?(ActiveQuery::Types::Boolean, false)).to be true
       end
 
       it 'rejects a string' do
-        expect(described_class.valid?(ActiveQuery::Base::Boolean, 'true')).to be false
+        expect(described_class.valid?(ActiveQuery::Types::Boolean, 'true')).to be false
       end
 
       it 'rejects nil' do
-        expect(described_class.valid?(ActiveQuery::Base::Boolean, nil)).to be false
+        expect(described_class.valid?(ActiveQuery::Types::Boolean, nil)).to be false
       end
     end
 

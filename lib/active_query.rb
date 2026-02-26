@@ -5,16 +5,14 @@ require 'active_support'
 require 'active_support/concern'
 require_relative 'active_query/version'
 require_relative 'active_query/resolver'
+require_relative 'active_query/type_registry'
 require_relative 'active_record_relation_extensions'
 
 module ActiveQuery
   module Base
     extend ::ActiveSupport::Concern
 
-    class Boolean
-      def self.to_s = 'Boolean'
-      def self.inspect = 'Boolean'
-    end
+    Boolean = ActiveQuery::Types::Boolean
 
     included do
       infer_model
@@ -176,9 +174,6 @@ module ActiveQuery
       def __operation(op, col, val) = where(arel_table[col].send(op, val))
     end
   end
-
-  require_relative 'active_query/type_registry'
-  TypeRegistry.register(Base::Boolean, type_class: Types::Boolean)
 
   module Scopes
     extend ActiveSupport::Concern

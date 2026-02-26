@@ -51,5 +51,6 @@ module ActiveQuery
     register(String, type_class: Types::String)
     register(Integer, type_class: Types::Integer)
     register(Float, type_class: Types::Float)
+    register(Types::Boolean, type_class: Types::Boolean)
   end
 end
