@@ -24,11 +24,12 @@ RSpec.describe 'Define Query' do
           expect(subject).to include(dummy2)
         end
 
-        context 'when invalid arg type is given' do
+        context 'when arg type is coercible' do
           subject { DummyModels::Query.by_name(name: 10) }
 
-          it 'coerces the value instead of raising' do
+          it 'coerces the value and executes the query' do
             expect { subject }.not_to raise_error
+            expect(subject).to eq(DummyModel.where(name: '10'))
           end
         end
       end
@@ -51,21 +52,22 @@ RSpec.describe 'Define Query' do
           expect(subject).to include(dummy2)
         end
 
-        context 'when invalid arg type is given' do
+        context 'when arg type is coercible' do
           subject { DummyModels::Query.by_name_resolver(name: 10) }
 
-          it 'coerces the value instead of raising' do
+          it 'coerces the value and executes the query' do
             expect { subject }.not_to raise_error
+            expect(subject).to eq(DummyModel.where(name: '10'))
           end
         end
       end
     end
 
-    context 'when query is invalid' do
+    context 'when query definition is invalid' do
       context 'when no arguments given' do
         subject { DummyModels::Query.query() }
 
-        it 'returns the amount of dummy models' do
+        it 'raises an ArgumentError for missing arguments' do
           expect { subject }.to raise_error(ArgumentError, 'wrong number of arguments (given 0, expected 2..4)')
         end
       end
@@ -73,7 +75,7 @@ RSpec.describe 'Define Query' do
       context 'when resolver is not provided' do
         subject { DummyModels::Query.query(:fake, 'fake description') }
 
-        it 'returns the amount of dummy models' do
+        it 'raises an ArgumentError for invalid definition' do
           expect { subject }.to raise_error(ArgumentError, 'Invalid query definition')
         end
       end
@@ -81,7 +83,7 @@ RSpec.describe 'Define Query' do
       context 'when empty name' do
         subject { DummyModels::Query.query('', 'fake description', -> { where(number: 2) }) }
 
-        it 'returns the amount of dummy models' do
+        it 'raises an ArgumentError for blank name' do
           expect { subject }.to raise_error(ArgumentError, 'name must be present')
         end
       end
