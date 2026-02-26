@@ -44,6 +44,14 @@ RSpec.describe 'Arguments' do
       end
     end
 
+    context 'when argument is a subclass of the expected type' do
+      subject { DummyModels::Query.by_name(name: Class.new(String).new('Dummy1')) }
+
+      it 'does not raise and accepts the subclass instance' do
+        expect { subject }.not_to raise_error
+      end
+    end
+
     context 'when passing boolean, string and integer' do
       subject { DummyModels::Query.all_args(active: false, name: 'Dummy1', number: 1) }
 
