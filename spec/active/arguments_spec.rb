@@ -36,11 +36,12 @@ RSpec.describe 'Arguments' do
       end
     end
 
-    context 'when argument given wrong type' do
+    context 'when argument type is coercible' do
       subject { DummyModels::Query.by_name(name: 10) }
 
-      it 'raises an error indicating name param is missing' do
-        expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+      it 'coerces the value and executes the query' do
+        expect { subject }.not_to raise_error
+        expect(subject).to eq(DummyModel.where(name: '10'))
       end
     end
 
@@ -74,10 +75,10 @@ RSpec.describe 'Arguments' do
       end
     end
 
-    context 'when query has a boolean argument, and the type provided doesnt match' do
+    context 'when boolean argument is not coercible' do
       subject { DummyModels::Query.all_args(active: 'not boolean', name: 'Dummy1', number: 1) }
 
-      it 'returns the dummy model that matches criteria' do
+      it 'raises an error because the value cannot be coerced to Boolean' do
         expect { subject }.to raise_error(ArgumentError, ':active must be of type Boolean')
       end
     end
