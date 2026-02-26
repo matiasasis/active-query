@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+require_relative 'types/base'
+require_relative 'types/string'
+require_relative 'types/integer'
+require_relative 'types/float'
+require_relative 'types/boolean'
+
 module ActiveQuery
   module TypeRegistry
     @validators = {}
@@ -41,5 +47,9 @@ module ActiveQuery
     def self.coercer?(type)
       @coercers.key?(type) || @type_classes.key?(type)
     end
+
+    register(String, type_class: Types::String)
+    register(Integer, type_class: Types::Integer)
+    register(Float, type_class: Types::Float)
   end
 end
