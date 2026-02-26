@@ -150,7 +150,7 @@ module ActiveQuery
               raise ArgumentError, ":#{given_arg_name} must be of type Boolean"
             end
           else
-            unless given_arg_value.instance_of?(given_arg_type)
+            unless given_arg_value.is_a?(given_arg_type)
               raise ArgumentError, ":#{given_arg_name} must be of type #{given_arg_type}"
             end
           end
