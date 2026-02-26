@@ -27,8 +27,8 @@ RSpec.describe 'Define Query' do
         context 'when invalid arg type is given' do
           subject { DummyModels::Query.by_name(name: 10) }
 
-          it 'returns corresponding to the invalid argument type' do
-            expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+          it 'coerces the value instead of raising' do
+            expect { subject }.not_to raise_error
           end
         end
       end
@@ -54,8 +54,8 @@ RSpec.describe 'Define Query' do
         context 'when invalid arg type is given' do
           subject { DummyModels::Query.by_name_resolver(name: 10) }
 
-          it 'returns corresponding to the invalid argument type' do
-            expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+          it 'coerces the value instead of raising' do
+            expect { subject }.not_to raise_error
           end
         end
       end

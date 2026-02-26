@@ -4,7 +4,7 @@ require 'spec_helper'
 
 RSpec.describe ActiveQuery::TypeRegistry do
   describe '.valid?' do
-    context 'with default is_a? validation' do
+    context 'with type class validation' do
       it 'accepts a String value for String type' do
         expect(described_class.valid?(String, 'hello')).to be true
       end
@@ -16,9 +16,19 @@ RSpec.describe ActiveQuery::TypeRegistry do
       it 'accepts an Integer value for Integer type' do
         expect(described_class.valid?(Integer, 42)).to be true
       end
+    end
 
-      it 'accepts subclasses' do
-        expect(described_class.valid?(String, Class.new(String).new('hi'))).to be true
+    context 'with default is_a? validation for unregistered types' do
+      let(:custom_type) { Class.new }
+
+      it 'falls back to is_a? for unregistered types' do
+        obj = custom_type.new
+        expect(described_class.valid?(custom_type, obj)).to be true
+      end
+
+      it 'accepts subclasses with is_a? fallback' do
+        sub = Class.new(custom_type)
+        expect(described_class.valid?(custom_type, sub.new)).to be true
       end
     end
 
@@ -48,7 +58,7 @@ RSpec.describe ActiveQuery::TypeRegistry do
       end
 
       after do
-        described_class.instance_variable_get(:@validators).delete(custom_type)
+        described_class.unregister(custom_type)
       end
 
       it 'uses the custom validator' do
@@ -59,51 +69,101 @@ RSpec.describe ActiveQuery::TypeRegistry do
   end
 
   describe '.coerce' do
-    context 'when no coercer is registered' do
+    context 'when no coercer or type class is registered' do
+      let(:custom_type) { Class.new }
+
       it 'returns the value unchanged' do
-        expect(described_class.coerce(String, 42)).to eq(42)
+        expect(described_class.coerce(custom_type, 42)).to eq(42)
       end
     end
 
-    context 'when a coercer is registered' do
+    context 'with type class coercion' do
+      it 'coerces a string to integer via type class' do
+        expect(described_class.coerce(Integer, '42')).to eq(42)
+      end
+
+      it 'coerces an integer to string via type class' do
+        expect(described_class.coerce(String, 42)).to eq('42')
+      end
+    end
+
+    context 'when a lambda coercer is registered (takes priority)' do
+      let(:custom_type) { Class.new }
+
       before do
-        described_class.register(Integer, coerce: ->(val) { val.to_i })
+        described_class.register(custom_type, coerce: ->(val) { val.to_s.upcase })
       end
 
       after do
-        described_class.instance_variable_get(:@coercers).delete(Integer)
+        described_class.unregister(custom_type)
       end
 
-      it 'coerces the value' do
-        expect(described_class.coerce(Integer, '42')).to eq(42)
+      it 'uses the lambda coercer' do
+        expect(described_class.coerce(custom_type, 'hello')).to eq('HELLO')
       end
     end
   end
 
   describe '.coercer?' do
-    it 'returns false when no coercer is registered' do
-      expect(described_class.coercer?(String)).to be false
+    it 'returns false when no coercer or type class is registered' do
+      custom_type = Class.new
+      expect(described_class.coercer?(custom_type)).to be false
     end
 
-    it 'returns true when a coercer is registered' do
-      described_class.register(Float, coerce: ->(val) { val.to_f })
-      expect(described_class.coercer?(Float)).to be true
-      described_class.instance_variable_get(:@coercers).delete(Float)
+    it 'returns true when a type class is registered' do
+      expect(described_class.coercer?(String)).to be true
+    end
+
+    it 'returns true when a lambda coercer is registered' do
+      custom_type = Class.new
+      described_class.register(custom_type, coerce: ->(val) { val })
+      expect(described_class.coercer?(custom_type)).to be true
+      described_class.unregister(custom_type)
     end
   end
 
-  describe 'global coercion via registry' do
+  describe '.unregister' do
+    it 'removes type class registration' do
+      custom_type = Class.new
+      type_class = Class.new(ActiveQuery::Types::Base) do
+        def self.valid?(value) = value.is_a?(Symbol)
+        def self.coerce(value) = value.to_sym
+      end
+
+      described_class.register(custom_type, type_class: type_class)
+      expect(described_class.coercer?(custom_type)).to be true
+
+      described_class.unregister(custom_type)
+      expect(described_class.coercer?(custom_type)).to be false
+    end
+
+    it 'falls back to is_a? validation after unregister' do
+      custom_type = Class.new
+      type_class = Class.new(ActiveQuery::Types::Base) do
+        def self.valid?(_value) = true
+      end
+
+      described_class.register(custom_type, type_class: type_class)
+      expect(described_class.valid?(custom_type, 'anything')).to be true
+
+      described_class.unregister(custom_type)
+      expect(described_class.valid?(custom_type, 'anything')).to be false
+      expect(described_class.valid?(custom_type, custom_type.new)).to be true
+    end
+
+    it 'removes lambda validators and coercers' do
+      custom_type = Class.new
+      described_class.register(custom_type, validator: ->(_) { true }, coerce: ->(v) { v })
+
+      described_class.unregister(custom_type)
+      expect(described_class.coercer?(custom_type)).to be false
+    end
+  end
+
+  describe 'global coercion via type class' do
     let!(:dummy1) { DummyModel.create!(name: 'Dummy1', active: false, number: 1) }
 
-    before do
-      described_class.register(Integer, coerce: ->(val) { val.to_i })
-    end
-
-    after do
-      described_class.instance_variable_get(:@coercers).delete(Integer)
-    end
-
-    it 'coerces a string to integer through global registry for by_number query' do
+    it 'coerces a string to integer through type class for by_number query' do
       result = DummyModels::Query.by_number(number: '1')
       expect(result).to include(dummy1)
     end
@@ -125,8 +185,8 @@ RSpec.describe ActiveQuery::TypeRegistry do
       expect { DummyModels::Query.by_number_coerced(number: '1') }.not_to raise_error
     end
 
-    it 'raises when value is invalid and no coercion is defined' do
-      expect { DummyModels::Query.by_number(number: '1') }.to raise_error(ArgumentError, ':number must be of type Integer')
+    it 'coerces via type class and does not raise' do
+      expect { DummyModels::Query.by_number(number: '1') }.not_to raise_error
     end
   end
 end

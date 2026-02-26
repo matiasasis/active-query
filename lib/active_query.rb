@@ -178,7 +178,16 @@ module ActiveQuery
   end
 
   require_relative 'active_query/type_registry'
-  TypeRegistry.register(Base::Boolean, validator: ->(val) { val == true || val == false })
+  require_relative 'active_query/types/base'
+  require_relative 'active_query/types/string'
+  require_relative 'active_query/types/integer'
+  require_relative 'active_query/types/float'
+  require_relative 'active_query/types/boolean'
+
+  TypeRegistry.register(String, type_class: Types::String)
+  TypeRegistry.register(Integer, type_class: Types::Integer)
+  TypeRegistry.register(Float, type_class: Types::Float)
+  TypeRegistry.register(Base::Boolean, type_class: Types::Boolean)
 
   module Scopes
     extend ActiveSupport::Concern

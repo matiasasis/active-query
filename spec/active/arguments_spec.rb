@@ -39,8 +39,8 @@ RSpec.describe 'Arguments' do
     context 'when argument given wrong type' do
       subject { DummyModels::Query.by_name(name: 10) }
 
-      it 'raises an error indicating name param is missing' do
-        expect { subject }.to raise_error(ArgumentError, ':name must be of type String')
+      it 'coerces the value instead of raising' do
+        expect { subject }.not_to raise_error
       end
     end
 
