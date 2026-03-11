@@ -97,6 +97,68 @@ ProductQuery.filter_products(
 ProductQuery.filter_products(name: 123, price: 'invalid', quantity: true, available: 'yes')
 ```
 
+### Custom Types & Coercion
+
+ActiveQuery includes built-in type coercion for `String`, `Integer`, `Float`, and `Boolean`. When a value doesn't match the expected type, ActiveQuery will attempt to coerce it before validation:
+
+```ruby
+# These all work — coercion converts the values automatically
+ProductQuery.filter_products(name: :widget, price: '19.99', quantity: '10', available: 'true')
+```
+
+**Built-in coercion behavior:**
+
+| Type | Coerces from | Example |
+|------|-------------|---------|
+| `String` | Any (via `.to_s`) | `42` → `"42"` |
+| `Integer` | Numeric strings | `"42"` → `42` |
+| `Float` | Numeric strings, integers | `"1.5"` → `1.5`, `42` → `42.0` |
+| `Boolean` | `"true"`, `"1"`, `1`, `"false"`, `"0"`, `0` | `"true"` → `true` |
+
+**Registering a custom type class:**
+
+Create a class that inherits from `ActiveQuery::Types::Base` and implements `.valid?` and `.coerce`:
+
+```ruby
+# config/initializers/active_query.rb
+class UuidType < ActiveQuery::Types::Base
+  UUID_REGEX = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
+
+  def self.valid?(value)
+    value.is_a?(String) && value.match?(UUID_REGEX)
+  end
+
+  def self.coerce(value)
+    value.to_s.downcase.strip
+  end
+end
+
+ActiveQuery::TypeRegistry.register(UuidType, type_class: UuidType)
+```
+
+**Disabling built-in coercion:**
+
+If you prefer strict type validation without coercion, unregister the built-in type:
+
+```ruby
+# config/initializers/active_query.rb
+ActiveQuery::TypeRegistry.unregister(Integer)  # now "42" won't auto-convert to 42
+```
+
+After unregistering, the type falls back to `is_a?` validation with no coercion.
+
+**Per-argument coercion:**
+
+You can also define coercion on individual arguments using the `coerce:` option:
+
+```ruby
+query :by_number, 'Find by number',
+  { number: { type: Integer, coerce: ->(v) { v.to_i } } },
+  -> (number:) { scope.where(number: number) }
+```
+
+Per-argument `coerce:` takes priority over the global TypeRegistry coercion.
+
 ### Optional Arguments and Defaults
 
 ```ruby

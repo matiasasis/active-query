@@ -72,6 +72,10 @@ module DummyModels
     query :by_number, 'Returns with number matching argument',
       { number: { type: Integer } }, -> (number:) { scope.where(number:) }
 
+    query :by_number_coerced, 'Returns with number, coerces string to int',
+      { number: { type: Integer, coerce: ->(v) { v.to_i } } },
+      -> (number:) { scope.where(number: number) }
+
     query :count_with_scope, 'Returns the count of the scope', -> { scope.count_scope }
 
     query :only_optional_argument,
