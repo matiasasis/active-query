@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-11
+
+### Added
+- `ActiveQuery::TypeRegistry` for extensible type validation and coercion — register custom types via `TypeRegistry.register` with a `type_class:`, custom validator lambda, or coercer lambda
+- Built-in type classes (`Types::String`, `Types::Integer`, `Types::Float`, `Types::Boolean`) with default coercion support
+- Per-argument `coerce:` option in argument definitions, taking priority over registry-level coercion
+- `TypeRegistry.unregister` to disable built-in coercion and fall back to strict `is_a?` validation
+- Integer coercion restricted to base-10 strings to prevent unexpected hex/octal conversions
+
+### Fixed
+- Replace `instance_of?` with `is_a?` in type validation so subclass instances (e.g. `ActiveSupport::SafeBuffer`) pass `String` type checks
+
 ## [0.1.3] - 2024-12-19
 
 ### Added
@@ -38,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Resolvers**: Support complex query logic with resolver classes
 - **Conditional Logic**: Apply scopes conditionally with `if`/`unless`
 
-[Unreleased]: https://github.com/matiasasis/active-query/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/matiasasis/active-query/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/matiasasis/active-query/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/matiasasis/active-query/compare/v0.0.1...v0.1.3
 [0.0.1]: https://github.com/matiasasis/active-query/releases/tag/v0.0.1
