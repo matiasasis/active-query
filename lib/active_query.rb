@@ -13,7 +13,14 @@ module ActiveQuery
 
     class Boolean; end
 
+    @registry = []
+
+    def self.registry
+      @registry
+    end
+
     included do
+      ActiveQuery::Base.registry << self
       infer_model
       @__queries = []
     end
