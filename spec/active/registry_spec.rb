@@ -14,5 +14,18 @@ RSpec.describe 'Registry' do
         klass.ancestors.include?(ActiveQuery::Base)
       })
     end
+
+    it 'registers classes that include ActiveQuery::Base through an intermediary concern' do
+      intermediary = Module.new do
+        extend ActiveSupport::Concern
+        include ActiveQuery::Base
+      end
+
+      query_class = Class.new do
+        include intermediary
+      end
+
+      expect(ActiveQuery::Base.registry).to include(query_class)
+    end
   end
 end

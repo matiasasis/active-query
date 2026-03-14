@@ -4,8 +4,10 @@ require 'spec_helper'
 
 RSpec.describe 'Query Discovery' do
   describe 'grouped queries from registry' do
+    let(:query_classes) { ActiveQuery::Base.registry.select { |k| k.is_a?(Class) } }
+
     let(:grouped) do
-      ActiveQuery::Base.registry.group_by { |klass|
+      query_classes.group_by { |klass|
         name = klass.name.to_s
         last_separator = name.rindex("::")
         last_separator ? name[0...last_separator] : ""
@@ -73,6 +75,10 @@ RSpec.describe 'Query Discovery' do
       count = query_obj[:queries].find { |q| q[:name] == :count }
 
       expect(count[:params]).to eq([])
+    end
+
+    it 'excludes intermediary modules from query classes' do
+      expect(query_classes).to all(satisfy { |k| k.is_a?(Class) })
     end
   end
 end
