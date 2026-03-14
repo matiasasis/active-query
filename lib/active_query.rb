@@ -14,7 +14,14 @@ module ActiveQuery
 
     Boolean = ActiveQuery::Types::Boolean
 
+    @registry = []
+
+    def self.registry
+      @registry
+    end
+
     included do
+      ActiveQuery::Base.registry << self unless ActiveQuery::Base.registry.include?(self)
       infer_model
       @__queries = []
     end
@@ -73,6 +80,8 @@ module ActiveQuery
       end
 
       def infer_model
+        return unless self.name
+
         model_class_name = self.name.sub(/::Query$/, '').classify
         return unless const_defined?(model_class_name)
 
