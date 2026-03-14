@@ -35,7 +35,8 @@ module ActiveQuery
       private
 
       def grouped_queries
-        ActiveQuery::Base.registry.group_by { |klass| namespace_for(klass) }.map do |namespace, klasses|
+        query_classes = ActiveQuery::Base.registry.select { |k| k.is_a?(Class) }
+        query_classes.group_by { |klass| namespace_for(klass) }.map do |namespace, klasses|
           {
             namespace: namespace,
             query_objects: klasses.map { |k| query_object_payload(k) }
