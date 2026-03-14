@@ -421,6 +421,133 @@
       margin-top: 4px;
     }
 
+    /* Search & filters */
+    .toolbar {
+      padding: 12px 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 7px 12px 7px 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--bg);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-light);
+      background: var(--surface);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .filter-group label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    .filter-select {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .toggle-group {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .toggle-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+      border: none;
+      background: var(--bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+    }
+
+    .toggle-btn:last-child {
+      border-right: none;
+    }
+
+    .toggle-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .toggle-btn:hover:not(.active) {
+      background: var(--border);
+    }
+
+    .filter-summary {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 0 32px 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-summary .clear-link {
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: none;
+      margin-left: 8px;
+    }
+
+    .filter-summary .clear-link:hover {
+      text-decoration: underline;
+    }
+
+    .highlight {
+      background: #fff3bf;
+      border-radius: 2px;
+    }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -451,14 +578,40 @@
       </div>
       <nav class="sidebar-nav" id="sidebar-nav"></nav>
     </aside>
-    <main class="main" id="main">
-      <div class="loading">Loading queries...</div>
-    </main>
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="toolbar" id="toolbar" style="display:none;">
+        <div class="search-box">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="search-input" placeholder="Search queries, descriptions, classes..." oninput="applyFilters()">
+        </div>
+        <div class="filter-group">
+          <label>Namespace</label>
+          <select class="filter-select" id="namespace-filter" onchange="applyFilters()">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Params</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" data-value="" onclick="setParamFilter(this)">All</button>
+            <button class="toggle-btn" data-value="with" onclick="setParamFilter(this)">With</button>
+            <button class="toggle-btn" data-value="without" onclick="setParamFilter(this)">Without</button>
+          </div>
+        </div>
+      </div>
+      <div id="filter-summary" class="filter-summary" style="display:none;"></div>
+      <main class="main" id="main">
+        <div class="loading">Loading queries...</div>
+      </main>
+    </div>
   </div>
 
   <script>
     var state = { data: [], activeClass: null };
+    var filters = { search: "", namespace: "", params: "" };
     var executeUrl = "<%= active_query_gui.execute_queries_path(format: :json) %>";
+
+    // ── Data fetching ──
 
     function fetchQueries() {
       var main = document.getElementById("main");
@@ -468,8 +621,9 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
           state.data = data;
-          renderSidebar();
-          renderMain();
+          populateNamespaceFilter();
+          document.getElementById("toolbar").style.display = "flex";
+          applyFilters();
         })
         .catch(function(err) {
           main.innerHTML = '<div class="empty-state"><h2>Error loading queries</h2><p>' + err.message + '</p></div>';
@@ -480,25 +634,144 @@
       fetchQueries();
     }
 
-    function renderSidebar() {
+    // ── Filtering ──
+
+    function getFilteredData() {
+      var search = filters.search.toLowerCase();
+      var ns = filters.namespace;
+      var paramFilter = filters.params;
+
+      var result = [];
+      state.data.forEach(function(group) {
+        if (ns && group.namespace !== ns) return;
+
+        var filteredObjects = [];
+        group.query_objects.forEach(function(qo) {
+          var filteredQueries = qo.queries.filter(function(q) {
+            // Param filter
+            var paramCount = q.params ? q.params.length : 0;
+            if (paramFilter === "with" && paramCount === 0) return false;
+            if (paramFilter === "without" && paramCount > 0) return false;
+
+            // Text search
+            if (search) {
+              var haystack = [
+                qo.class_name,
+                q.name,
+                q.description || "",
+                (q.params || []).map(function(p) { return p.name; }).join(" ")
+              ].join(" ").toLowerCase();
+              return haystack.indexOf(search) >= 0;
+            }
+            return true;
+          });
+
+          if (filteredQueries.length > 0) {
+            filteredObjects.push({
+              class_name: qo.class_name,
+              source_location: qo.source_location,
+              queries: filteredQueries
+            });
+          }
+        });
+
+        if (filteredObjects.length > 0) {
+          result.push({ namespace: group.namespace, query_objects: filteredObjects });
+        }
+      });
+      return result;
+    }
+
+    function applyFilters() {
+      filters.search = document.getElementById("search-input").value;
+      filters.namespace = document.getElementById("namespace-filter").value;
+
+      var filtered = getFilteredData();
+      renderSidebar(filtered);
+      renderMain(filtered);
+      renderFilterSummary(filtered);
+    }
+
+    function setParamFilter(btn) {
+      var group = btn.parentElement;
+      group.querySelectorAll(".toggle-btn").forEach(function(b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      filters.params = btn.getAttribute("data-value");
+      applyFilters();
+    }
+
+    function clearFilters() {
+      document.getElementById("search-input").value = "";
+      document.getElementById("namespace-filter").value = "";
+      filters = { search: "", namespace: "", params: "" };
+      var toggleBtns = document.querySelectorAll(".toggle-group .toggle-btn");
+      toggleBtns.forEach(function(b) { b.classList.remove("active"); });
+      toggleBtns[0].classList.add("active");
+      applyFilters();
+    }
+
+    function populateNamespaceFilter() {
+      var select = document.getElementById("namespace-filter");
+      select.innerHTML = '<option value="">All namespaces</option>';
+      state.data.forEach(function(group) {
+        var ns = group.namespace || "(root)";
+        var opt = document.createElement("option");
+        opt.value = group.namespace;
+        opt.textContent = ns;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderFilterSummary(filtered) {
+      var summary = document.getElementById("filter-summary");
+      var isFiltered = filters.search || filters.namespace || filters.params;
+
+      if (!isFiltered) {
+        summary.style.display = "none";
+        return;
+      }
+
+      var totalQueries = 0;
+      var totalObjects = 0;
+      filtered.forEach(function(g) {
+        g.query_objects.forEach(function(qo) {
+          totalObjects++;
+          totalQueries += qo.queries.length;
+        });
+      });
+
+      var parts = [];
+      if (filters.search) parts.push('matching "' + escapeHtml(filters.search) + '"');
+      if (filters.namespace) parts.push("in " + escapeHtml(filters.namespace));
+      if (filters.params === "with") parts.push("with parameters");
+      if (filters.params === "without") parts.push("without parameters");
+
+      summary.style.display = "block";
+      summary.innerHTML = "Showing " + totalQueries + " queries across " + totalObjects + " objects " + parts.join(", ") +
+        '<a class="clear-link" onclick="clearFilters()">Clear filters</a>';
+    }
+
+    // ── Rendering ──
+
+    function renderSidebar(data) {
       var nav = document.getElementById("sidebar-nav");
-      if (state.data.length === 0) {
-        nav.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px;">No queries found</div>';
+      if (data.length === 0) {
+        nav.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px;">No matches</div>';
         return;
       }
 
       var html = "";
-      state.data.forEach(function(group) {
+      data.forEach(function(group) {
         var ns = group.namespace || "(root)";
         html += '<div class="namespace-group">';
         html += '<button class="namespace-toggle open" onclick="toggleNamespace(this)">';
-        html += '<span class="arrow">&#9654;</span> ' + escapeHtml(ns);
+        html += '<span class="arrow">&#9654;</span> ' + highlightText(ns);
         html += '</button>';
         html += '<div class="namespace-children open">';
         group.query_objects.forEach(function(qo) {
           var shortName = qo.class_name.split("::").pop();
           html += '<a class="query-class-link" data-class="' + escapeAttr(qo.class_name) + '" onclick="scrollToClass(\'' + escapeAttr(qo.class_name) + '\')">';
-          html += escapeHtml(shortName);
+          html += highlightText(shortName);
           html += '</a>';
         });
         html += '</div></div>';
@@ -506,7 +779,7 @@
       nav.innerHTML = html;
     }
 
-    function renderMain() {
+    function renderMain(data) {
       var main = document.getElementById("main");
 
       if (state.data.length === 0) {
@@ -514,15 +787,24 @@
         return;
       }
 
+      if (data.length === 0) {
+        main.innerHTML = '<div class="empty-state"><h2>No matching queries</h2><p>Try adjusting your search or filters.</p></div>';
+        return;
+      }
+
       var total = 0;
-      state.data.forEach(function(g) {
-        g.query_objects.forEach(function(qo) { total += qo.queries.length; });
+      var totalObjects = 0;
+      data.forEach(function(g) {
+        g.query_objects.forEach(function(qo) {
+          totalObjects++;
+          total += qo.queries.length;
+        });
       });
 
       var html = '<div class="main-header"><h1>Query Explorer</h1>';
-      html += '<p>' + total + ' queries across ' + countClasses() + ' objects</p></div>';
+      html += '<p>' + total + ' queries across ' + totalObjects + ' objects</p></div>';
 
-      state.data.forEach(function(group) {
+      data.forEach(function(group) {
         group.query_objects.forEach(function(qo) {
           html += renderQueryObject(qo);
         });
@@ -536,7 +818,7 @@
       var html = '<div class="query-object" id="qo-' + escapeAttr(id) + '">';
 
       html += '<div class="query-object-header">';
-      html += '<h2>' + escapeHtml(qo.class_name) + '</h2>';
+      html += '<h2>' + highlightText(qo.class_name) + '</h2>';
       if (qo.source_location) {
         var shortPath = shortenPath(qo.source_location.file);
         html += '<span class="source-location">' + escapeHtml(shortPath) + ':' + qo.source_location.line + '</span>';
@@ -561,9 +843,9 @@
 
       html += '<div class="query-card-header" onclick="toggleCard(\'' + cardId + '\')">';
       html += '<span class="arrow" id="arrow-' + cardId + '">&#9654;</span>';
-      html += '<span class="query-name">:' + escapeHtml(q.name) + '</span>';
+      html += '<span class="query-name">:' + highlightText(q.name) + '</span>';
       if (q.description) {
-        html += '<span class="query-description">' + escapeHtml(q.description) + '</span>';
+        html += '<span class="query-description">' + highlightText(q.description) + '</span>';
       }
       if (paramCount > 0) {
         html += '<span class="query-param-count">' + paramCount + ' param' + (paramCount > 1 ? 's' : '') + '</span>';
@@ -578,7 +860,7 @@
         html += '</tr></thead><tbody>';
         q.params.forEach(function(p) {
           html += '<tr>';
-          html += '<td class="param-name">' + escapeHtml(p.name) + '</td>';
+          html += '<td class="param-name">' + highlightText(p.name) + '</td>';
           html += '<td><span class="type-tag">' + escapeHtml(p.type || "any") + '</span></td>';
           html += '<td>';
           if (p.optional) {
@@ -625,6 +907,8 @@
       return html;
     }
 
+    // ── UI helpers ──
+
     function toggleCard(cardId) {
       var body = document.getElementById("body-" + cardId);
       var header = body.previousElementSibling;
@@ -650,26 +934,43 @@
       });
     }
 
-    function countClasses() {
-      var count = 0;
-      state.data.forEach(function(g) { count += g.query_objects.length; });
-      return count;
-    }
-
     function shortenPath(path) {
       var idx = path.indexOf("/app/");
       return idx >= 0 ? path.substring(idx + 1) : path;
     }
 
+    // ── Text utilities ──
+
     function escapeHtml(str) {
       var div = document.createElement("div");
-      div.appendChild(document.createTextNode(str));
+      div.appendChild(document.createTextNode(String(str)));
       return div.innerHTML;
     }
 
     function escapeAttr(str) {
-      return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
+
+    function highlightText(str) {
+      var text = escapeHtml(str);
+      if (!filters.search) return text;
+
+      var search = escapeHtml(filters.search);
+      var regex = new RegExp("(" + search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+      return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+
+    // ── Keyboard shortcut ──
+
+    document.addEventListener("keydown", function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        var input = document.getElementById("search-input");
+        if (input) input.focus();
+      }
+    });
+
+    // ── Query execution ──
 
     function executeQuery(className, queryName, cardId) {
       var form = document.getElementById("form-" + cardId);
@@ -678,7 +979,6 @@
       var resultOutput = document.getElementById("result-output-" + cardId);
       var resultMeta = document.getElementById("result-meta-" + cardId);
 
-      // Collect form values
       var args = {};
       var inputs = form.querySelectorAll("input");
       inputs.forEach(function(input) {
