@@ -4,12 +4,32 @@ module ActiveQuery
   module GUI
     class QueriesController < ActionController::Base
       layout false
+      skip_forgery_protection only: [:execute]
 
       def index
         respond_to do |format|
           format.html
           format.json { render json: grouped_queries }
         end
+      end
+
+      def execute
+        klass = find_query_class!(params[:query_class])
+        query_name = params[:query_name].to_sym
+        query_def = find_query_def!(klass, query_name)
+        args = coerce_args(params[:args], query_def[:args_def] || {})
+
+        result = if args.empty?
+                   klass.public_send(query_name)
+                 else
+                   klass.public_send(query_name, args)
+                 end
+
+        render json: { result: serialize_result(result) }
+      rescue ArgumentError, NameError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      rescue => e
+        render json: { error: "#{e.class}: #{e.message}" }, status: :internal_server_error
       end
 
       private
@@ -55,6 +75,46 @@ module ActiveQuery
         name = klass.name.to_s
         last_separator = name.rindex("::")
         last_separator ? name[0...last_separator] : ""
+      end
+
+      def find_query_class!(name)
+        ActiveQuery::Base.registry.find { |k| k.name == name } or
+          raise NameError, "Unknown query class: #{name}"
+      end
+
+      def find_query_def!(klass, query_name)
+        (klass.queries || []).find { |q| q[:name] == query_name } or
+          raise NameError, "Unknown query :#{query_name} on #{klass.name}"
+      end
+
+      def coerce_args(args_hash, args_def)
+        return {} if args_hash.blank?
+
+        args_hash.to_unsafe_h.symbolize_keys.each_with_object({}) do |(key, value), result|
+          next if value.blank? && (args_def.dig(key, :optional) == true)
+
+          type = args_def.dig(key, :type)
+          result[key] = coerce_value(value, type)
+        end
+      end
+
+      def coerce_value(value, type)
+        case type&.name
+        when "Integer" then Integer(value)
+        when "Float" then Float(value)
+        when "ActiveQuery::Base::Boolean" then ActiveModel::Type::Boolean.new.cast(value)
+        else value.to_s
+        end
+      end
+
+      def serialize_result(result)
+        case result
+        when ActiveRecord::Relation then result.limit(100).as_json
+        when Integer, Float, String, NilClass, TrueClass, FalseClass then result
+        when ActiveRecord::Base then result.as_json
+        when Enumerable then result.first(100).as_json
+        else result.as_json
+        end
       end
     end
   end

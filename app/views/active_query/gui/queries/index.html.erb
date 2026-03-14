@@ -319,6 +319,108 @@
       font-style: italic;
     }
 
+    /* Execute form */
+    .execute-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .execute-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .form-field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .form-field input {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      min-width: 160px;
+    }
+
+    .form-field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-light);
+    }
+
+    .execute-btn {
+      padding: 6px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .execute-btn:hover {
+      opacity: 0.9;
+    }
+
+    .execute-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Result display */
+    .result-section {
+      margin-top: 12px;
+    }
+
+    .result-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .result-output {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 300px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .result-error {
+      background: #fff5f5;
+      border-color: #f5c6cb;
+      color: #842029;
+    }
+
+    .result-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -356,6 +458,7 @@
 
   <script>
     var state = { data: [], activeClass: null };
+    var executeUrl = "<%= active_query_gui.execute_queries_path(format: :json) %>";
 
     function fetchQueries() {
       var main = document.getElementById("main");
@@ -444,7 +547,7 @@
         html += '<div style="padding:14px 18px;"><span class="no-params">No queries defined</span></div>';
       } else {
         qo.queries.forEach(function(q, i) {
-          html += renderQueryCard(q, id + "-" + i);
+          html += renderQueryCard(q, id + "-" + i, qo.class_name);
         });
       }
 
@@ -452,7 +555,7 @@
       return html;
     }
 
-    function renderQueryCard(q, cardId) {
+    function renderQueryCard(q, cardId, className) {
       var paramCount = q.params ? q.params.length : 0;
       var html = '<div class="query-card">';
 
@@ -491,6 +594,31 @@
       } else {
         html += '<span class="no-params">No parameters</span>';
       }
+
+      // Execute form
+      html += '<div class="execute-section">';
+      html += '<div class="execute-form" id="form-' + cardId + '">';
+      if (paramCount > 0) {
+        q.params.forEach(function(p) {
+          var placeholder = p.optional ? "optional" : "required";
+          if (p.default != null) placeholder = "default: " + p.default;
+          html += '<div class="form-field">';
+          html += '<label>' + escapeHtml(p.name) + ' <span class="type-tag" style="font-size:10px;padding:0 4px;">' + escapeHtml(p.type || "any") + '</span></label>';
+          html += '<input type="text" name="' + escapeAttr(p.name) + '" placeholder="' + escapeAttr(placeholder) + '"';
+          if (!p.optional) html += ' required';
+          html += '>';
+          html += '</div>';
+        });
+      }
+      html += '<button class="execute-btn" onclick="executeQuery(\'' + escapeAttr(className) + '\', \'' + escapeAttr(q.name) + '\', \'' + cardId + '\')">Execute</button>';
+      html += '</div>';
+      html += '<div class="result-section" id="result-' + cardId + '" style="display:none;">';
+      html += '<h4>Result</h4>';
+      html += '<div class="result-output" id="result-output-' + cardId + '"></div>';
+      html += '<div class="result-meta" id="result-meta-' + cardId + '"></div>';
+      html += '</div>';
+      html += '</div>';
+
       html += '</div>';
 
       html += '</div>';
@@ -541,6 +669,69 @@
 
     function escapeAttr(str) {
       return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function executeQuery(className, queryName, cardId) {
+      var form = document.getElementById("form-" + cardId);
+      var btn = form.querySelector(".execute-btn");
+      var resultSection = document.getElementById("result-" + cardId);
+      var resultOutput = document.getElementById("result-output-" + cardId);
+      var resultMeta = document.getElementById("result-meta-" + cardId);
+
+      // Collect form values
+      var args = {};
+      var inputs = form.querySelectorAll("input");
+      inputs.forEach(function(input) {
+        if (input.value !== "") {
+          args[input.name] = input.value;
+        }
+      });
+
+      btn.disabled = true;
+      btn.textContent = "Running...";
+      resultSection.style.display = "block";
+      resultOutput.className = "result-output";
+      resultOutput.textContent = "Executing...";
+      resultMeta.textContent = "";
+
+      var startTime = performance.now();
+
+      fetch(executeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query_class: className,
+          query_name: queryName,
+          args: args
+        })
+      })
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+      .then(function(resp) {
+        var elapsed = Math.round(performance.now() - startTime);
+
+        if (resp.ok) {
+          var result = resp.data.result;
+          var text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+          resultOutput.className = "result-output";
+          resultOutput.textContent = text;
+
+          var meta = elapsed + "ms";
+          if (Array.isArray(result)) meta += " \u00b7 " + result.length + " row" + (result.length !== 1 ? "s" : "");
+          resultMeta.textContent = meta;
+        } else {
+          resultOutput.className = "result-output result-error";
+          resultOutput.textContent = resp.data.error || "Unknown error";
+          resultMeta.textContent = elapsed + "ms";
+        }
+      })
+      .catch(function(err) {
+        resultOutput.className = "result-output result-error";
+        resultOutput.textContent = "Network error: " + err.message;
+      })
+      .finally(function() {
+        btn.disabled = false;
+        btn.textContent = "Execute";
+      });
     }
 
     fetchQueries();
