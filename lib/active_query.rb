@@ -20,6 +20,12 @@ module ActiveQuery
       @registry
     end
 
+    @registry = []
+
+    def self.registry
+      @registry
+    end
+
     included do
       ActiveQuery::Base.registry << self unless ActiveQuery::Base.registry.include?(self)
       infer_model
