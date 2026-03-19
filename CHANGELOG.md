@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-19
+
+### Added
+- `ActiveQuery::Base.registry` — a global registry tracking all classes that include `ActiveQuery::Base`, enabling programmatic discovery of query objects in an application
+
+### Fixed
+- Registry support for intermediary concern pattern (e.g. classes that include `ActiveQuery::Base` through an intermediate concern like `HireartQuery::Base`)
+- Guard `infer_model` against anonymous classes with nil name
+
 ## [0.2.0] - 2026-03-11
 
 ### Added
@@ -50,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Resolvers**: Support complex query logic with resolver classes
 - **Conditional Logic**: Apply scopes conditionally with `if`/`unless`
 
-[Unreleased]: https://github.com/matiasasis/active-query/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/matiasasis/active-query/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/matiasasis/active-query/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/matiasasis/active-query/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/matiasasis/active-query/compare/v0.0.1...v0.1.3
 [0.0.1]: https://github.com/matiasasis/active-query/releases/tag/v0.0.1
