@@ -11,6 +11,7 @@ ActiveQuery is a Ruby gem that helps you create clean, reusable query objects wi
 - **Conditional Logic**: Apply scopes conditionally with `if` and `unless`
 - **Resolver Pattern**: Support for complex query logic in separate classes
 - **Custom Scopes**: Define reusable scopes within query objects
+- **Global Registry**: Discover all query objects in your application at runtime
 - **ActiveRecord Integration**: Works seamlessly with ActiveRecord models
 
 ## Installation
@@ -324,6 +325,44 @@ UserQuery.queries
 #   { name: :active, description: "Find active users", args_def: {} },
 #   { name: :by_name, description: "Find by name", args_def: { name: { type: String } } }
 # ]
+```
+
+### Global Query Registry
+
+`ActiveQuery::Base` maintains a global registry of all classes that include it, enabling programmatic discovery of every query object in your application:
+
+```ruby
+# All query objects are automatically registered
+class UserQuery
+  include ActiveQuery::Base
+  # ...
+end
+
+class ProductQuery
+  include ActiveQuery::Base
+  # ...
+end
+
+# Discover all registered query objects
+ActiveQuery::Base.registry
+# => [UserQuery, ProductQuery]
+```
+
+This also works when including `ActiveQuery::Base` through an intermediary concern:
+
+```ruby
+module ApplicationQuery
+  extend ActiveSupport::Concern
+  include ActiveQuery::Base
+end
+
+class OrderQuery
+  include ApplicationQuery
+  # ...
+end
+
+ActiveQuery::Base.registry
+# => [..., OrderQuery]
 ```
 
 ### Error Handling

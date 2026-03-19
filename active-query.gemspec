@@ -7,7 +7,6 @@ Gem::Specification.new do |spec|
   spec.version = ActiveQuery::VERSION
   spec.authors = ["Matias Asis"]
   spec.email = ["matiasis.90@gmail.com"]
-
   spec.summary = "ActiveQuery is a gem that helps you to create query objects in a simple way."
   spec.description = "ActiveQuery is a gem that helps you to create query objects in a simple way. It provides a DSL to define queries and scopes for your query object."
   spec.homepage = "https://github.com/matiasasis/active-query"
