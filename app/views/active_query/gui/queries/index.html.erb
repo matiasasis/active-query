@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ActiveQuery Explorer</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #dee2e6;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --primary: #4361ee;
+      --primary-light: #eef0ff;
+      --tag-bg: #e9ecef;
+      --code-bg: #f1f3f5;
+      --success: #2b9348;
+      --sidebar-w: 280px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Layout */
+    .layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-header button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-header button:hover {
+      background: var(--bg);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .namespace-group {
+      margin-bottom: 4px;
+    }
+
+    .namespace-toggle {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 6px 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .namespace-toggle:hover {
+      background: var(--bg);
+    }
+
+    .namespace-toggle .arrow {
+      display: inline-block;
+      width: 16px;
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.15s;
+    }
+
+    .namespace-toggle.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .namespace-children {
+      display: none;
+    }
+
+    .namespace-children.open {
+      display: block;
+    }
+
+    .query-class-link {
+      display: block;
+      padding: 4px 16px 4px 32px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .query-class-link:hover,
+    .query-class-link.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    /* Main */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+    }
+
+    .main-header {
+      margin-bottom: 24px;
+    }
+
+    .main-header h1 {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .main-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* Query object card */
+    .query-object {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .query-object-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .query-object-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .source-location {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    /* Individual query card */
+    .query-card {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .query-card:last-child {
+      border-bottom: none;
+    }
+
+    .query-card-header {
+      padding: 12px 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+
+    .query-card-header:hover {
+      background: var(--bg);
+    }
+
+    .query-card-header .arrow {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: inline-block;
+      width: 14px;
+      transition: transform 0.15s;
+    }
+
+    .query-card-header.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .query-name {
+      font-weight: 600;
+      font-size: 14px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      color: var(--primary);
+    }
+
+    .query-description {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .query-param-count {
+      font-size: 11px;
+      background: var(--tag-bg);
+      padding: 1px 7px;
+      border-radius: 10px;
+      color: var(--text-muted);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .query-card-body {
+      display: none;
+      padding: 0 18px 16px 42px;
+    }
+
+    .query-card-body.open {
+      display: block;
+    }
+
+    /* Params table */
+    .params-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .params-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .params-table th {
+      text-align: left;
+      padding: 6px 12px 6px 0;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .params-table td {
+      padding: 6px 12px 6px 0;
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .params-table .param-name {
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-weight: 500;
+    }
+
+    .type-tag {
+      display: inline-block;
+      background: var(--code-bg);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+
+    .badge-required {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .badge-optional {
+      background: #d4edda;
+      color: var(--success);
+    }
+
+    .no-params {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Execute form */
+    .execute-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .execute-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .form-field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .form-field input {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      min-width: 160px;
+    }
+
+    .form-field input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-light);
+    }
+
+    .execute-btn {
+      padding: 6px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .execute-btn:hover {
+      opacity: 0.9;
+    }
+
+    .execute-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Result display */
+    .result-section {
+      margin-top: 12px;
+    }
+
+    .result-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .result-output {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 300px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .result-error {
+      background: #fff5f5;
+      border-color: #f5c6cb;
+      color: #842029;
+    }
+
+    .result-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span>ActiveQuery</span>
+        <button onclick="refresh()" title="Reload queries">Refresh</button>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    </aside>
+    <main class="main" id="main">
+      <div class="loading">Loading queries...</div>
+    </main>
+  </div>
+
+  <script>
+    var state = { data: [], activeClass: null };
+    var executeUrl = "<%= active_query_gui.execute_queries_path(format: :json) %>";
+
+    function fetchQueries() {
+      var main = document.getElementById("main");
+      main.innerHTML = '<div class="loading">Loading queries...</div>';
+
+      fetch("<%= active_query_gui.queries_path(format: :json) %>")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          state.data = data;
+          renderSidebar();
+          renderMain();
+        })
+        .catch(function(err) {
+          main.innerHTML = '<div class="empty-state"><h2>Error loading queries</h2><p>' + err.message + '</p></div>';
+        });
+    }
+
+    function refresh() {
+      fetchQueries();
+    }
+
+    function renderSidebar() {
+      var nav = document.getElementById("sidebar-nav");
+      if (state.data.length === 0) {
+        nav.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px;">No queries found</div>';
+        return;
+      }
+
+      var html = "";
+      state.data.forEach(function(group) {
+        var ns = group.namespace || "(root)";
+        html += '<div class="namespace-group">';
+        html += '<button class="namespace-toggle open" onclick="toggleNamespace(this)">';
+        html += '<span class="arrow">&#9654;</span> ' + escapeHtml(ns);
+        html += '</button>';
+        html += '<div class="namespace-children open">';
+        group.query_objects.forEach(function(qo) {
+          var shortName = qo.class_name.split("::").pop();
+          html += '<a class="query-class-link" data-class="' + escapeAttr(qo.class_name) + '" onclick="scrollToClass(\'' + escapeAttr(qo.class_name) + '\')">';
+          html += escapeHtml(shortName);
+          html += '</a>';
+        });
+        html += '</div></div>';
+      });
+      nav.innerHTML = html;
+    }
+
+    function renderMain() {
+      var main = document.getElementById("main");
+
+      if (state.data.length === 0) {
+        main.innerHTML = '<div class="empty-state"><h2>No queries registered</h2><p>Define query objects that include ActiveQuery::Base to see them here.</p></div>';
+        return;
+      }
+
+      var total = 0;
+      state.data.forEach(function(g) {
+        g.query_objects.forEach(function(qo) { total += qo.queries.length; });
+      });
+
+      var html = '<div class="main-header"><h1>Query Explorer</h1>';
+      html += '<p>' + total + ' queries across ' + countClasses() + ' objects</p></div>';
+
+      state.data.forEach(function(group) {
+        group.query_objects.forEach(function(qo) {
+          html += renderQueryObject(qo);
+        });
+      });
+
+      main.innerHTML = html;
+    }
+
+    function renderQueryObject(qo) {
+      var id = qo.class_name.replace(/::/g, "-");
+      var html = '<div class="query-object" id="qo-' + escapeAttr(id) + '">';
+
+      html += '<div class="query-object-header">';
+      html += '<h2>' + escapeHtml(qo.class_name) + '</h2>';
+      if (qo.source_location) {
+        var shortPath = shortenPath(qo.source_location.file);
+        html += '<span class="source-location">' + escapeHtml(shortPath) + ':' + qo.source_location.line + '</span>';
+      }
+      html += '</div>';
+
+      if (qo.queries.length === 0) {
+        html += '<div style="padding:14px 18px;"><span class="no-params">No queries defined</span></div>';
+      } else {
+        qo.queries.forEach(function(q, i) {
+          html += renderQueryCard(q, id + "-" + i, qo.class_name);
+        });
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function renderQueryCard(q, cardId, className) {
+      var paramCount = q.params ? q.params.length : 0;
+      var html = '<div class="query-card">';
+
+      html += '<div class="query-card-header" onclick="toggleCard(\'' + cardId + '\')">';
+      html += '<span class="arrow" id="arrow-' + cardId + '">&#9654;</span>';
+      html += '<span class="query-name">:' + escapeHtml(q.name) + '</span>';
+      if (q.description) {
+        html += '<span class="query-description">' + escapeHtml(q.description) + '</span>';
+      }
+      if (paramCount > 0) {
+        html += '<span class="query-param-count">' + paramCount + ' param' + (paramCount > 1 ? 's' : '') + '</span>';
+      }
+      html += '</div>';
+
+      html += '<div class="query-card-body" id="body-' + cardId + '">';
+      if (paramCount > 0) {
+        html += '<div class="params-section"><h4>Parameters</h4>';
+        html += '<table class="params-table"><thead><tr>';
+        html += '<th>Name</th><th>Type</th><th>Required</th><th>Default</th>';
+        html += '</tr></thead><tbody>';
+        q.params.forEach(function(p) {
+          html += '<tr>';
+          html += '<td class="param-name">' + escapeHtml(p.name) + '</td>';
+          html += '<td><span class="type-tag">' + escapeHtml(p.type || "any") + '</span></td>';
+          html += '<td>';
+          if (p.optional) {
+            html += '<span class="badge badge-optional">optional</span>';
+          } else {
+            html += '<span class="badge badge-required">required</span>';
+          }
+          html += '</td>';
+          html += '<td>' + (p.default != null ? escapeHtml(String(p.default)) : '<span style="color:var(--text-muted)">—</span>') + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+      } else {
+        html += '<span class="no-params">No parameters</span>';
+      }
+
+      // Execute form
+      html += '<div class="execute-section">';
+      html += '<div class="execute-form" id="form-' + cardId + '">';
+      if (paramCount > 0) {
+        q.params.forEach(function(p) {
+          var placeholder = p.optional ? "optional" : "required";
+          if (p.default != null) placeholder = "default: " + p.default;
+          html += '<div class="form-field">';
+          html += '<label>' + escapeHtml(p.name) + ' <span class="type-tag" style="font-size:10px;padding:0 4px;">' + escapeHtml(p.type || "any") + '</span></label>';
+          html += '<input type="text" name="' + escapeAttr(p.name) + '" placeholder="' + escapeAttr(placeholder) + '"';
+          if (!p.optional) html += ' required';
+          html += '>';
+          html += '</div>';
+        });
+      }
+      html += '<button class="execute-btn" onclick="executeQuery(\'' + escapeAttr(className) + '\', \'' + escapeAttr(q.name) + '\', \'' + cardId + '\')">Execute</button>';
+      html += '</div>';
+      html += '<div class="result-section" id="result-' + cardId + '" style="display:none;">';
+      html += '<h4>Result</h4>';
+      html += '<div class="result-output" id="result-output-' + cardId + '"></div>';
+      html += '<div class="result-meta" id="result-meta-' + cardId + '"></div>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '</div>';
+
+      html += '</div>';
+      return html;
+    }
+
+    function toggleCard(cardId) {
+      var body = document.getElementById("body-" + cardId);
+      var header = body.previousElementSibling;
+      body.classList.toggle("open");
+      header.classList.toggle("open");
+    }
+
+    function toggleNamespace(btn) {
+      btn.classList.toggle("open");
+      var children = btn.nextElementSibling;
+      children.classList.toggle("open");
+    }
+
+    function scrollToClass(className) {
+      var id = "qo-" + className.replace(/::/g, "-");
+      var el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      document.querySelectorAll(".query-class-link").forEach(function(link) {
+        link.classList.toggle("active", link.getAttribute("data-class") === className);
+      });
+    }
+
+    function countClasses() {
+      var count = 0;
+      state.data.forEach(function(g) { count += g.query_objects.length; });
+      return count;
+    }
+
+    function shortenPath(path) {
+      var idx = path.indexOf("/app/");
+      return idx >= 0 ? path.substring(idx + 1) : path;
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement("div");
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function executeQuery(className, queryName, cardId) {
+      var form = document.getElementById("form-" + cardId);
+      var btn = form.querySelector(".execute-btn");
+      var resultSection = document.getElementById("result-" + cardId);
+      var resultOutput = document.getElementById("result-output-" + cardId);
+      var resultMeta = document.getElementById("result-meta-" + cardId);
+
+      // Collect form values
+      var args = {};
+      var inputs = form.querySelectorAll("input");
+      inputs.forEach(function(input) {
+        if (input.value !== "") {
+          args[input.name] = input.value;
+        }
+      });
+
+      btn.disabled = true;
+      btn.textContent = "Running...";
+      resultSection.style.display = "block";
+      resultOutput.className = "result-output";
+      resultOutput.textContent = "Executing...";
+      resultMeta.textContent = "";
+
+      var startTime = performance.now();
+
+      fetch(executeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query_class: className,
+          query_name: queryName,
+          args: args
+        })
+      })
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+      .then(function(resp) {
+        var elapsed = Math.round(performance.now() - startTime);
+
+        if (resp.ok) {
+          var result = resp.data.result;
+          var text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+          resultOutput.className = "result-output";
+          resultOutput.textContent = text;
+
+          var meta = elapsed + "ms";
+          if (Array.isArray(result)) meta += " \u00b7 " + result.length + " row" + (result.length !== 1 ? "s" : "");
+          resultMeta.textContent = meta;
+        } else {
+          resultOutput.className = "result-output result-error";
+          resultOutput.textContent = resp.data.error || "Unknown error";
+          resultMeta.textContent = elapsed + "ms";
+        }
+      })
+      .catch(function(err) {
+        resultOutput.className = "result-output result-error";
+        resultOutput.textContent = "Network error: " + err.message;
+      })
+      .finally(function() {
+        btn.disabled = false;
+        btn.textContent = "Execute";
+      });
+    }
+
+    fetchQueries();
+  </script>
+</body>
+</html>
